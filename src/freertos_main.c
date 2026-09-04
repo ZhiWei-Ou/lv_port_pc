@@ -75,43 +75,6 @@ void vApplicationTickHook(void) {}
 
 // ........................................................................................................
 /**
- * @brief   Create Hello World screen
- *
- * This function creates a simple LVGL screen with a "Hello, World!" label centered on the screen.
- *
- * @param   None
- * @return  None
- */
-void create_hello_world_screen()
-{
-    /* Create a new screen object */
-    lv_obj_t *screen = lv_obj_create(NULL);
-    if (screen == NULL){
-        printf("Error: Failed to create screen object\n");
-        /* Return if screen creation fails */
-        return;
-    }
-
-    /* Create a new label object on the screen */
-    lv_obj_t *label = lv_label_create(screen);
-    if (label == NULL){
-        printf("Error: Failed to create label object\n");
-        /* Return if label creation fails */
-        return;
-    }
-
-    /* Set the text of the label to "Hello, World!" */
-    lv_label_set_text(label, "Hello, World!");
-
-    /* Align the label to the center of the screen */
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
-    /* Load the created screen and make it visible */
-    lv_scr_load(screen);
-}
-
-// ........................................................................................................
-/**
  * @brief   LVGL task
  *
  * This task initializes LVGL and runs the main loop, periodically calling the LVGL task handler.
@@ -127,9 +90,7 @@ void lvgl_task(void *pvParameters)
     lv_init();
 
     /*Initialize the HAL (display, input devices, tick) for LVGL*/
-    sdl_hal_init(320, 480);
-    /* Show simple hello world screen */
-    create_hello_world_screen();
+    sdl_hal_init(720, 720);
 
     while (true){
         lv_timer_handler(); /* Handle LVGL tasks */
