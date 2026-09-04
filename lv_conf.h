@@ -198,7 +198,7 @@
  *
  *  Enable: LV_USE_MATRIX
  */
-#define LV_USE_VECTOR_GRAPHIC 1
+#define LV_USE_VECTOR_GRAPHIC 0
 
 /** Render a widget and its children into an image buffer with lv_snapshot_take(). */
 #define LV_USE_SNAPSHOT 0
