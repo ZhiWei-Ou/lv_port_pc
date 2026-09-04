@@ -10,6 +10,7 @@
 
 #include "lvgl/lvgl.h"
 #include "hal/hal.h"
+#include "glow/demo/glow_demo.h"
 
 #define WINDOW_WIDTH  720
 #define WINDOW_HEIGHT 720
@@ -23,8 +24,7 @@ int main(int argc, char **argv)
 
     lv_init();
     sdl_hal_init(WINDOW_WIDTH, WINDOW_HEIGHT);
-
-    /* Add UI objects to lv_screen_active() here. */
+    glow_demo();
 
     while(1) {
         uint32_t sleep_time_ms = lv_timer_handler();

@@ -72,7 +72,12 @@ set(CONFIG_LV_USE_THORVG_INTERNAL OFF CACHE BOOL "Build bundled ThorVG" FORCE)
 add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${SDL2_INCLUDE_DIRS})
 
-set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c)
+set(MAIN_SOURCES
+    src/mouse_cursor_icon.c
+    src/hal/hal.c
+    components/glow/glow.c
+    components/glow/demo/glow_demo.c
+)
 set(MAIN_LIBS lvgl ${SDL2_LIBRARIES})
 
 # Create the main executable, depending on the FreeRTOS option
@@ -146,6 +151,7 @@ endif()
 
 add_executable(main ${MAIN_SOURCES})
 target_compile_definitions(main PRIVATE LV_CONF_INCLUDE_SIMPLE)
+target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/components)
 target_link_libraries(main ${MAIN_LIBS})
 
 # On Windows, GUI applications do not show a console by default,

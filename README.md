@@ -11,9 +11,10 @@
 - 720 × 720 SDL2 模拟窗口
 - 32-bit 色深
 - 16 ms 默认刷新周期（60 FPS 档）
-- SDL2 硬件加速、Direct 渲染和双缓冲
+- SDL2 硬件加速、全帧渲染和双缓冲
 - 开启 FPS、系统 CPU、进程 CPU、内存使用和内存碎片率监控
 - 开启软件复杂绘制与复杂渐变
+- 4 MiB LVGL 内存池，为旋转/缩放 Glow 的中间绘制层预留空间
 - 默认不加载任何 demo 或示例 UI
 - 默认不构建 LVGL examples、demos 和内置 ThorVG
 - 关闭高开销的对象、样式和内存完整性检查
@@ -138,6 +139,33 @@ ui_card_create(lv_screen_active());
 
 组件应尽量只负责自身结构、样式和内部事件。screen 级布局、页面切换和业务状态建议
 由上层 UI 代码管理，使组件能够在不同页面中复用。
+
+### Glow Frame
+
+`components/glow/glow.h` 提供透明背景容器 `ui_glow`。它默认铺满父对象，
+内部光晕始终位于子对象下方，并被 Frame 边界裁剪：
+
+```c
+#include "glow/glow.h"
+
+lv_obj_t * glow = ui_glow_create(parent);
+ui_glow_gradient_stop_t stops[] = {
+    {lv_color_hex(0xC4B5FD), LV_OPA_80, 0},
+    {lv_color_hex(0x818CF8), LV_OPA_50, 96},
+    {lv_color_hex(0x3B82F6), LV_OPA_TRANSP, 255},
+};
+ui_glow_set_gradient(glow, stops, 3);
+ui_glow_set_center(glow, -40, 20);
+ui_glow_set_eccentricity(glow, 500);
+ui_glow_set_angle(glow, 25);
+ui_glow_animate_spread(glow, 850, 500, NULL);
+```
+
+中心偏移以 Frame 中心为原点，允许超出边界；`spread` 会被限制到 0–1000，
+其中 1000 的长轴直径等于 Frame 较长边。离心率限制到 0–999，角度自动归一化到
+0–359°。渐变接受 2–4 个按 `position`（0–255）非递减排列的色标；非法输入返回
+`LV_RESULT_INVALID` 并保留当前渐变。立即设置扩散范围会取消该 Frame 上正在运行的
+扩散动画；动画时传入 `NULL` 缓动函数会使用 ease-in-out。
 
 ## 关键配置位置
 

@@ -55,7 +55,7 @@
 
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
 /** Size of the pool `lv_malloc()` allocates from. Needs to be at least 2kB (2048). */
-#define LV_MEM_SIZE (1024 * 1024)
+#define LV_MEM_SIZE (4 * 1024 * 1024)
 
 /** Place the pool at a fixed address instead of allocating it as a normal array.
  *  0: unused.
@@ -273,7 +273,7 @@
 #define LV_DRAW_SW_COMPLEX 1
 
 /** Each additional stop costs (sizeof(lv_color_t) + 1) bytes. */
-#define LV_GRADIENT_MAX_STOPS 2
+#define LV_GRADIENT_MAX_STOPS 4
 
 /** Adds linear gradients at an angle, plus radial and conical gradients. */
 #define LV_USE_DRAW_SW_COMPLEX_GRADIENTS 1
@@ -1768,7 +1768,7 @@
  *  - LV_DISPLAY_RENDER_MODE_DIRECT: Direct mode
  *  - LV_DISPLAY_RENDER_MODE_FULL: Full mode
  */
-#define LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
+#define LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_FULL
 
 /** Number of screen-sized buffers */
 #define LV_SDL_BUF_COUNT 2
