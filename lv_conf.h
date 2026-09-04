@@ -136,10 +136,10 @@
  *  192: round up from x.25
  *  254: round up
  */
-#define LV_COLOR_MIX_ROUND_OFS 0
+#define LV_COLOR_MIX_ROUND_OFS 128
 
 /** Default display refresh, input device read and animation step period. */
-#define LV_DEF_REFR_PERIOD 33
+#define LV_DEF_REFR_PERIOD 16
 
 /** Used to initialize default sizes such as widget sizes and style paddings. */
 #define LV_DPI_DEF 130
@@ -1771,7 +1771,7 @@
 #define LV_SDL_RENDER_MODE LV_DISPLAY_RENDER_MODE_DIRECT
 
 /** Number of screen-sized buffers */
-#define LV_SDL_BUF_COUNT 1
+#define LV_SDL_BUF_COUNT 2
 
 /** Ask SDL for a GPU-backed renderer instead of a software one. */
 #define LV_SDL_ACCELERATED 1
@@ -2034,10 +2034,10 @@
 /** The port provides `lv_os_get_proc_idle_percent` a per-process idle percentage
  *  in addition to the system-wide one. LVGL provides a default one for linux systems.
  */
-#define LV_SYSMON_PROC_IDLE_AVAILABLE 0
+#define LV_SYSMON_PROC_IDLE_AVAILABLE 1
 
 /** Show the CPU usage and FPS count in a label on the screen. */
-#define LV_USE_PERF_MONITOR 0
+#define LV_USE_PERF_MONITOR 1
 
 #if LV_USE_PERF_MONITOR
 /** Performance monitor position
@@ -2061,7 +2061,7 @@
 
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
 /** Show the used memory and the memory fragmentation in a label on the screen. */
-#define LV_USE_MEM_MONITOR 0
+#define LV_USE_MEM_MONITOR 1
 
 #endif /*LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN*/
 
