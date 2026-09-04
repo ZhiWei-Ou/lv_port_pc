@@ -1,189 +1,201 @@
-# VSCode Simulator project for LVGL
+# LVGL PC 个性化组件开发工程
 
-[LVGL](https://github.com/lvgl/lvgl) is written mainly for microcontrollers and embedded systems, however you can run the library **on your PC** as well without any embedded hardware. The code written on PC can be simply copied when your are using an embedded system.
+这是一个用于在 PC 上开发、调试和验证个性化 LVGL UI 组件的工程。通过 SDL2
+模拟显示器、鼠标、滚轮和键盘，无需嵌入式硬件即可快速迭代组件的布局、样式与交互。
 
-This project is pre-configured for VSCode and should work work on Windows, Linux and MacOs as well. FreeRTOS is also included and can be optionally enabled to better simulate embedded system's behavior. 
+本项目 fork 自 [lvgl/lv_port_pc_vscode](https://github.com/lvgl/lv_port_pc_vscode)，
+并针对独立 UI 组件开发进行了精简和配置调整。
 
-## Get started
+## 当前配置
 
-### Install SDL and the build tools
+- 720 × 720 SDL2 模拟窗口
+- 32-bit 色深
+- 16 ms 默认刷新周期（60 FPS 档）
+- SDL2 硬件加速、Direct 渲染和双缓冲
+- 开启 FPS、系统 CPU、进程 CPU、内存使用和内存碎片率监控
+- 开启软件复杂绘制与复杂渐变
+- 默认不加载任何 demo 或示例 UI
+- 默认不构建 LVGL examples、demos 和内置 ThorVG
+- 关闭高开销的对象、样式和内存完整性检查
 
-- **Windows (vcpkg):** `vcpkg install sdl2`  (`vcpkg` can be installed from [https://github.com/microsoft/vcpkg](https://github.com/microsoft/vcpkg)) Also install either MinGW or another compiler and `cmake`.
-- **macOS (Homebrew):** `brew install sdl2 cmake make`  
-- **Linux:**  
-  - **Debian/Ubuntu:** `sudo apt install build-essential cmake libsdl2-dev`  
-  - **Arch:** `sudo pacman -S base-devel cmake sdl2`  
-  - **Fedora:** `sudo dnf install @development-tools cmake SDL2-devel`  
-- **Manual Installation of SDL:** Download from [SDL’s website](https://github.com/libsdl-org/SDL/releases) and place headers/libraries in your project.
-- **Verify Installation:** `sdl2-config --version`, `cmake --version`, `gcc --version`, `g++ --version` (should return the installed version).  
+> 16 ms 是 LVGL 使用整数毫秒时最接近 60 FPS 的刷新周期。实际帧率取决于
+> UI 复杂度、渲染负载和运行环境。
 
-### Get the PC project
+## 项目结构
 
-Clone the PC project and the related sub modules:
-
-```bash
-git clone --recursive https://github.com/lvgl/lv_port_pc_vscode
+```text
+.
+├── components/          # 个性化 UI 组件
+├── src/
+│   ├── main.c           # PC 模拟器入口和 UI 创建起点
+│   ├── hal/             # SDL2 显示及输入设备初始化
+│   └── mouse_cursor_icon.c
+├── lv_conf.h            # LVGL 项目配置
+├── lvgl/                # LVGL Git 子模块
+├── FreeRTOS/            # 可选 FreeRTOS Git 子模块
+├── CMakeLists.txt
+└── simulator.code-workspace
 ```
 
-## Usage
+## 环境依赖
 
-### Visual Studio Code
+需要 C/C++ 编译器、CMake、Make（或其他 CMake 生成器）和 SDL2 开发包。
 
-1. Be sure you have installed [SDL and the build tools](#install-sdl-and-the-build-tools)
-2. Open the project by double clicking on `simulator.code-workspace` or opening it with `File/Open Workspace from File`
-3. Install the recommended plugins
-4. Click the Run and Debug page on the left, and select `Debug LVGL demo with gdb` from the drop-down on the top. Like this:
-![image](https://github.com/lvgl/lv_port_pc_vscode/assets/7599318/f527b235-5718-4949-b5f0-bd807b3a64ba)
-5. Click the Play button or hit F5 to start debugging.
-
-#### ArchLinux User
-
-VSCode does not officially provide an installation package under Arch, you need to use the AUR manager `paru` to install it.
-The command is as follows:
+### Debian / Ubuntu
 
 ```bash
-paru -S visual-studio-code-bin
+sudo apt update
+sudo apt install build-essential cmake libsdl2-dev
 ```
 
-#### macOS
+### Arch Linux
 
-Apple's default clang does not support the `-fsanitize=leak` flag.
+```bash
+sudo pacman -S base-devel cmake sdl2
+```
 
-to build using the latest version of clang from homebrew, do the following:
+### Fedora
 
-1. `brew install llvm`
+```bash
+sudo dnf install gcc gcc-c++ cmake make SDL2-devel
+```
 
-2. cmd+shift+p and run `Cmake: select a kit`, then `[Scan for kits]`
+### macOS
 
-3. then cmd+shift+p and run `Cmake: select a kit`, select the version of clang you just installed from homebrew (it should say `Using compilers C=/opt/homebrew/opt/llvm/bin/clang ...`)
+```bash
+brew install cmake sdl2
+```
 
-4. reconfigure by running cmd+shift+p `Cmake: Configure`
+Windows 可以通过 [vcpkg](https://github.com/microsoft/vcpkg) 安装 SDL2：
 
-5. build using [step 4 above](#visual-studio-code)
+```powershell
+vcpkg install sdl2
+```
 
-### FreeRTOS configuration
-To correctly configure the project, the RTOS (Real-Time Operating System) requires a significant amount of heap memory, especially when debugging an SDL (Simple DirectMedia Layer) window application. In this project, the heap memory has been experimentally set to **512 MB**.
+## 获取子模块
+
+首次克隆时建议使用 `--recursive`。如果仓库已经克隆到本地，执行：
+
+```bash
+git submodule update --init --recursive
+```
+
+## 构建与运行
+
+在项目根目录执行：
+
+```bash
+cmake -B build -S .
+cmake --build build -j
+./bin/main
+```
+
+也可以使用项目提供的 CMake `run` target：
+
+```bash
+cmake --build build --target run
+```
+
+程序启动后显示一个 720 × 720 的空白 screen。右下角显示 FPS 与 CPU 信息，
+左下角显示内存使用和碎片率。
+
+## 开发个性化组件
+
+自定义组件统一放在 `components/` 下。建议一个组件使用一组 `.c` 和 `.h` 文件：
+
+```text
+components/
+├── ui_card.c
+├── ui_card.h
+├── ui_button.c
+├── ui_button.h
+└── ui_components.h
+```
+
+组件 API 建议接收父对象并返回创建出的根对象：
 
 ```c
-#define configTOTAL_HEAP_SIZE ( ( size_t ) ( 512 * 1024 * 1024 ) )  // 512 MB Heap
-```
-This configuration ensures that the SDL window is displayed in a timely manner. If this value is reduced, it may cause significant delays in the SDL window's appearance. If the allocated heap memory is too small, the window may fail to appear altogether.
-Therefore, it is crucial to allocate sufficient heap memory to ensure smooth execution and debugging experience.
-
-### Enable FreeRTOS 
-To enable the rtos part of this project select in lv_conf.h `#define LV_USE_OS   LV_OS_NONE` to `#define LV_USE_OS  LV_OS_FREERTOS`
-Additionaly you have to enable the compilation of all FreeRTOS Files by turning on the `option(USE_FREERTOS "Enable FreeRTOS" OFF)` in the CMakeLists.txt file or
-by enabling the same flag from the command line when bootstrapping `cmake`:
-
-```bash
-cmake -B build -DUSE_FREERTOS=ON
+lv_obj_t * ui_card_create(lv_obj_t * parent);
 ```
 
-### CMake
+新增组件后，在 `add_executable(main ...)` 之后将源文件和头文件目录加入目标：
 
-This project uses CMake under the hood which can be used without Visula Studio Code too. Just type these in a Terminal when you are in the project's root folder:
+```cmake
+target_sources(main PRIVATE
+    components/ui_card.c
+)
 
-```bash
-mkdir build
-cd build
-cmake ..
-make -j
+target_include_directories(main PRIVATE
+    ${PROJECT_SOURCE_DIR}/components
+)
 ```
 
-## Run demos and examples
-
-By default, the widgets demo (`lv_demo_widgets()`) will run. If you want to run a different demo or example from the LVGL library,
-simply replace the demo function call in the code with another one—such as `lv_demo_benchmark()` or `lv_example_label_1()`.
+然后在 `src/main.c` 的 UI 创建位置使用当前 screen：
 
 ```c
-int main(int argc, char **argv)
-{
-  /* ... */
-  /* Run the default demo */
-  /* To try a different demo or example, replace this with one of: */
-  /* - lv_demo_benchmark(); */
-  /* - lv_demo_stress(); */
-  /* - lv_example_label_1(); */
-  /* - etc. */
-  lv_demo_widgets(); 
-
-  while(1) {
-      /* ... */
-  }
-  return 0;
-}
+ui_card_create(lv_screen_active());
 ```
 
-## Optional library
+组件应尽量只负责自身结构、样式和内部事件。screen 级布局、页面切换和业务状态建议
+由上层 UI 代码管理，使组件能够在不同页面中复用。
 
-There are also FreeType and FFmpeg support. You can install these according to the followings:
+## 关键配置位置
 
-### Linux
+| 配置 | 文件 | 当前值 |
+| --- | --- | --- |
+| 模拟窗口尺寸 | `src/main.c` | 720 × 720 |
+| 色深 | `lv_conf.h` / `LV_COLOR_DEPTH` | 32 |
+| 刷新周期 | `lv_conf.h` / `LV_DEF_REFR_PERIOD` | 16 ms |
+| SDL 缓冲数量 | `lv_conf.h` / `LV_SDL_BUF_COUNT` | 2 |
+| 性能监控 | `lv_conf.h` / `LV_USE_PERF_MONITOR` | 开启 |
+| 内存监控 | `lv_conf.h` / `LV_USE_MEM_MONITOR` | 开启 |
+
+## 可选 CMake 功能
+
+以下功能默认关闭，可在配置阶段按需开启：
 
 ```bash
-# FreeType support
-wget https://kumisystems.dl.sourceforge.net/project/freetype/freetype2/2.13.2/freetype-2.13.2.tar.xz
-tar -xf freetype-2.13.2.tar.xz
-cd freetype-2.13.2
-make
-make install
+cmake -B build -S . \
+  -DLV_USE_DRAW_SDL=ON \
+  -DLV_USE_LIBPNG=ON \
+  -DLV_USE_LIBJPEG_TURBO=ON \
+  -DLV_USE_FFMPEG=ON \
+  -DLV_USE_FREETYPE=ON
 ```
+
+开启前需要先安装对应的系统开发库。
+
+### LVGL Pro 工程
+
+可以通过 `LVGL_PRO_PROJECT_DIR` 接入已有的 LVGL Pro 工程：
 
 ```bash
-# FFmpeg support
-git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
-cd ffmpeg
-git checkout release/6.0
-./configure --disable-all --disable-autodetect --disable-podpages --disable-asm --enable-avcodec --enable-avformat --enable-decoders --enable-encoders --enable-demuxers --enable-parsers --enable-protocol='file' --enable-swscale --enable-zlib
-make
-sudo make install
+cmake -B build -S . -DLVGL_PRO_PROJECT_DIR=/path/to/lvgl-pro-project
+cmake --build build -j
 ```
-### (RT)OS support
-Works with any OS like pthred, Windows, FreeRTOS, etc. It has build in support for FreeRTOS. 
 
-## Test
-This project is configured for [VSCode](https://code.visualstudio.com) and is tested on: 
-- Ubuntu Linux 
-- Windows WSL (Ubuntu Linux)
+### FreeRTOS
 
-It requires a working version of GCC, GDB and make in your path.
+如需使用 FreeRTOS，需要同时：
 
-To allow debugging inside VSCode you will also require a GDB [extension](https://marketplace.visualstudio.com/items?itemName=webfreak.debug) or other suitable debugger. All the requirements, build and debug settings have been pre-configured in the [.workspace](simulator.code-workspace) file.
-
-The project can use **SDL** but it can be easily relaced by any other built-in LVGL dirvers.
-
-## Integration with LVGL Pro
-
-This project supports integration with LVGL Pro projects for UI development.
-
-### Setup
-
-1. Configure CMake with your LVGL Pro project folder:
+1. 在 `lv_conf.h` 中将 `LV_USE_OS` 设置为 `LV_OS_FREERTOS`。
+2. 使用 `USE_FREERTOS` 重新配置工程。
 
 ```bash
-cmake -B build -DLVGL_PRO_PROJECT_DIR=<path-to-lvgl-pro-project>
+cmake -B build -S . -DUSE_FREERTOS=ON
+cmake --build build -j
 ```
 
-Build your project:
+## VS Code
 
-```bash
-cmake --build build
-```
+使用 VS Code 时可以直接打开 `simulator.code-workspace`。完成 CMake 配置后，可通过
+CMake Tools 构建，或继续使用终端中的构建命令。
 
-### Usage in Code
+## 上游与第三方项目
 
-In your main.c, include the UI header from your LVGL Pro project and replace the default demo with your screen.
+- Fork 来源：[lvgl/lv_port_pc_vscode](https://github.com/lvgl/lv_port_pc_vscode)
+- LVGL：[lvgl/lvgl](https://github.com/lvgl/lvgl)
+- SDL：[libsdl-org/SDL](https://github.com/libsdl-org/SDL)
+- FreeRTOS：[FreeRTOS/FreeRTOS-Kernel](https://github.com/FreeRTOS/FreeRTOS-Kernel)
 
-```c
-#include "ui.h"
-
-int main(void) {
-
-    /*Initialization code for LVGL*/
-    
-    /* Initialize the LVGL Pro UI */
-    ui_init("<path-to-lvgl-pro-project>");
-    
-    /* ... rest of your application ...*/
-}
-```
+LVGL、SDL2、FreeRTOS 及其他第三方代码分别遵循其自身许可证。
