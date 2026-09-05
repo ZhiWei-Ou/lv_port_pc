@@ -10,10 +10,10 @@
 
 #include "lvgl/lvgl.h"
 #include "hal/hal.h"
-#include "glow/demo/glow_demo.h"
+#include "radial_background/demo/radial_background_demo.h"
 
-#define WINDOW_WIDTH  720
-#define WINDOW_HEIGHT 720
+#define WINDOW_WIDTH  700
+#define WINDOW_HEIGHT 700
 
 #if LV_USE_OS != LV_OS_FREERTOS
 
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     lv_init();
     sdl_hal_init(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glow_demo();
+    radial_background_demo();
 
     while(1) {
         uint32_t sleep_time_ms = lv_timer_handler();

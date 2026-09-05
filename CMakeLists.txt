@@ -77,6 +77,8 @@ set(MAIN_SOURCES
     src/hal/hal.c
     components/glow/glow.c
     components/glow/demo/glow_demo.c
+    components/radial_background/radial_background.c
+    components/radial_background/demo/radial_background_demo.c
 )
 set(MAIN_LIBS lvgl ${SDL2_LIBRARIES})
 
