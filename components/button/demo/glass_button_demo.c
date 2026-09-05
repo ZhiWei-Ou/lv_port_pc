@@ -1,6 +1,6 @@
-#include "glass_button/demo/glass_button_demo.h"
+#include "button/demo/glass_button_demo.h"
 
-#include "glass_button/glass_button.h"
+#include "button/glass_button.h"
 #include "radial_background/radial_background.h"
 
 typedef struct {

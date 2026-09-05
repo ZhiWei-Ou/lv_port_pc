@@ -142,7 +142,7 @@ void card_demo(void)
 }
 ```
 
-入口固定为 `<组件名>_demo()`，头文件为 `<组件名>/demo/<组件名>_demo.h`。
+每个 `demo/` 目录提供一个 `*_demo.h` 入口头文件，函数名和可执行文件名与其文件名一致（去掉 `.h`）。组件目录名可以不同，例如 `button/demo/glass_button_demo.h` 对应 `glass_button_demo()`。
 新增组件无需逐个修改 CMake 源文件列表，构建后生成 `bin/card_demo`。
 C++ 实现的入口应在头文件中使用 `extern "C"`，供公共 C 入口调用。
 

@@ -29,7 +29,7 @@ For debugging, configure with `-DCMAKE_BUILD_TYPE=Debug`; add `-DASAN=ON` for Ad
 
 Use C99 or C++17 as configured by CMake. Match nearby code: four-space indentation, snake_case identifiers, uppercase macros, and function opening braces on separate lines. Public component APIs use `<component>_<action>`, such as `glow_create(parent)`; keep internal helpers `static`.
 
-Pair component `.c` and `.h` files, use header guards, and place each component in `components/<name>/`; CMake automatically discovers sources and excludes `demo/` from the component library. Demo entry points follow `<name>_demo()` in `demo/<name>_demo.h`. Keep component behavior local and screen layout in application/demo code. No repository-level formatter or linter configuration is provided.
+Pair component `.c` and `.h` files, use header guards, and place each component in `components/<name>/`; CMake automatically discovers sources and excludes `demo/` from the component library. Each demo directory provides one `*_demo.h` entry header; its stem names the entry function and executable independently of the component directory name. Keep component behavior local and screen layout in application/demo code. No repository-level formatter or linter configuration is provided.
 
 ## Testing Guidelines
 

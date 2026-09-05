@@ -3,7 +3,7 @@
 圆形或胶囊形半透明玻璃质感按钮，左上与右下有渐隐边缘高光。背景采用低透明度暖白色叠加，能透出下方内容；本组件不模糊背景。当前 LVGL 的 backdrop blur 在独立缩放层内无法直接取得下层场景，因此这里采用透明表面与高光组合，保持按压前后外观一致。
 
 ```c
-#include "glass_button/glass_button.h"
+#include "button/glass_button.h"
 
 lv_obj_t * button = glass_button_create(parent);
 lv_obj_set_size(button, 72, 72);

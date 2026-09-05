@@ -3,7 +3,7 @@
 #include <math.h>
 #include "tracking_chart/tracking_chart.h"
 #include "radial_background/radial_background.h"
-#include "glass_button/glass_button.h"
+#include "button/glass_button.h"
 
 #define DEMO_DURATION_MS 120000
 #define DEMO_SAMPLE_MS 100
