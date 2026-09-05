@@ -233,8 +233,10 @@ CMake Tools 构建，或继续使用终端中的构建命令。
 ## 上游与第三方项目
 
 - Fork 来源：[lvgl/lv_port_pc_vscode](https://github.com/lvgl/lv_port_pc_vscode)
-- LVGL：[lvgl/lvgl](https://github.com/lvgl/lvgl)
-- SDL：[libsdl-org/SDL](https://github.com/libsdl-org/SDL)
+- LVGL：[lvgl/lvgl](https://github.com/lvgl/lvgl)，当前子模块版本为 **9.6.0-dev**，固定提交为 [`f45e3a3e87f5`](https://github.com/lvgl/lvgl/commit/f45e3a3e87f517ee134d52d01ad7c8a887efd199)。
+- SDL2：[libsdl-org/SDL](https://github.com/libsdl-org/SDL)，由系统开发包提供。
 - FreeRTOS：[FreeRTOS/FreeRTOS-Kernel](https://github.com/FreeRTOS/FreeRTOS-Kernel)
 
 LVGL、SDL2、FreeRTOS 及其他第三方代码分别遵循其自身许可证。
+
+LVGL 版本号取自 `lvgl/include/lvgl/lv_version.h`；当前使用开发版本，具体代码以仓库记录的子模块提交为准。
