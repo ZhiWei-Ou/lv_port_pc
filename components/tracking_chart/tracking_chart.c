@@ -98,7 +98,7 @@ static chart_geometry_t geometry(lv_obj_t * obj)
 {
     int32_t width = lv_obj_get_width(obj);
     int32_t height = lv_obj_get_height(obj);
-    chart_geometry_t g = {8, width / 2, width - 8, 16, height - 80, height - 64};
+    chart_geometry_t g = {8, width / 2, width - 8, 16, height - 76, height - 64};
     return g;
 }
 
@@ -159,7 +159,7 @@ lv_result_t ui_tracking_chart_set_target(lv_obj_t * obj,
     chart->target = target;
     chart->target_count = count;
     double padding = (high - low) * 0.1;
-    chart->y_min = low - padding;
+    chart->y_min = low == 0 ? 0 : low - padding;
     chart->y_max = high == low ? 1 : high + padding;
     ui_tracking_chart_reset(obj);
     return LV_RESULT_OK;
@@ -235,6 +235,18 @@ void ui_tracking_chart_reset(lv_obj_t * obj)
     chart->actual_capacity = 0;
     refresh_labels(chart);
     lv_obj_invalidate(obj);
+}
+
+void ui_tracking_chart_get_actual_point(lv_obj_t * obj, lv_point_t * point)
+{
+    tracking_chart_t * chart = (tracking_chart_t *)obj;
+    chart_geometry_t g = geometry(obj);
+    point->x = g.center;
+    point->y = g.axis - 12;
+    if(chart->actual_count) {
+        double value = chart->actual[chart->actual_count - 1].sample.value;
+        point->y = (int32_t)value_y(chart, &g, LV_CLAMP(chart->y_min, value, chart->y_max));
+    }
 }
 
 static void refresh_labels(tracking_chart_t * chart)

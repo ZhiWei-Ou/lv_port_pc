@@ -64,7 +64,7 @@ static void observe_curve(lv_event_t * e)
         if(point.x == LV_DRAW_LINE_POINT_NONE) continue;
         /* Chart at (90,160), 520x270. Curves must remain left of center. */
         CHECK(point.x >= 97.99f && point.x <= 350.01f);
-        CHECK(point.y >= 175.99f && point.y <= 350.01f);
+        CHECK(point.y >= 175.99f && point.y <= 354.01f);
         if(actual) {
             observation->min_opa = LV_MIN(observation->min_opa, line->opa);
             observation->min_x = fminf(observation->min_x, point.x);
@@ -131,7 +131,7 @@ static void test_chart(void)
     /* At 12 seconds, only 12/20 of the fixed-width history is filled. */
     CHECK(fabsf(observation.min_x - 198.8f) < 0.01f);
     CHECK(fabsf(observation.last_x - 350) < 0.01f);
-    CHECK(fabsf(observation.last_y - (350 - 39.0f / 48 * 174)) < 0.01f);
+    CHECK(fabsf(observation.last_y - (354 - 35.0f / 44 * 178)) < 0.01f);
     CHECK(find_label(chart, "035.0") && find_label(chart, "12"));
     snapshot("chart_12");
 
@@ -179,8 +179,8 @@ static void test_chart(void)
     /* Only 100..120 seconds remain: the old peak of 40 is off screen,
      * and the sparse 90..120 second segment is clipped at the left edge. */
     CHECK(fabsf(observation.min_x - 98) < 0.01f);
-    CHECK(observation.min_y >= 350 - 24.0f / 48 * 174 - 0.01f);
-    CHECK(observation.max_y <= 350 - 4.0f / 48 * 174 + 0.01f);
+    CHECK(observation.min_y >= 354 - 20.0f / 44 * 178 - 0.01f);
+    CHECK(observation.max_y <= 354 + 0.01f);
     snapshot("chart_120");
 
     const ui_tracking_chart_sample_t zero[] = {{0, 0}, {120000, 0}};
@@ -197,9 +197,15 @@ static void test_demo(void)
     tracking_chart_demo();
     lv_obj_t * screen = lv_screen_active();
     CHECK(find_label(screen, "Double Espresso"));
+    lv_refr_now(NULL);
+    snapshot("demo_initial");
     lv_tick_inc(12000); lv_timer_handler(); lv_refr_now(NULL);
     CHECK(find_label(screen, "12"));
     snapshot("demo_12");
+    lv_obj_send_event(find_button(screen), LV_EVENT_CLICKED, NULL);
+    lv_tick_inc(5000); lv_timer_handler();
+    CHECK(find_label(screen, "12"));
+    lv_obj_send_event(find_button(screen), LV_EVENT_CLICKED, NULL);
     lv_tick_inc(48000); lv_timer_handler(); lv_refr_now(NULL);
     CHECK(find_label(screen, "60"));
     snapshot("demo_60");
@@ -245,10 +251,13 @@ static void test_sdl_stop(void)
     sdl_click(display, button, SDL_MOUSEBUTTONDOWN); sdl_step(170);
     CHECK(lv_obj_get_style_transform_scale_x(button, 0) == 243);
     sdl_click(display, button, SDL_MOUSEBUTTONUP); sdl_step(250);
-    CHECK(lv_obj_has_state(button, LV_STATE_DISABLED));
+    CHECK(!lv_obj_has_state(button, LV_STATE_DISABLED));
     CHECK(lv_obj_get_style_transform_scale_x(button, 0) == 256);
     sdl_step(1100);
     CHECK(find_label(lv_screen_active(), "1"));
+    sdl_click(display, button, SDL_MOUSEBUTTONDOWN); sdl_step(170);
+    sdl_click(display, button, SDL_MOUSEBUTTONUP); sdl_step(1100);
+    CHECK(find_label(lv_screen_active(), "2") || find_label(lv_screen_active(), "3"));
     lv_obj_delete(lv_obj_get_parent(find_label(lv_screen_active(), "Double Espresso")));
     sdl_step(150);
     lv_sdl_quit();

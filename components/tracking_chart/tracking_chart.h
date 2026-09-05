@@ -18,7 +18,7 @@ lv_obj_t * ui_tracking_chart_create(lv_obj_t * parent);
 
 /* Copies >= 2 finite samples, beginning at zero with strictly increasing times.
  * The final time defines duration. Success resets actual history and fixes the
- * shared Y range from the complete target plan, including zero and 10% padding.
+ * shared Y range from the complete target plan, including zero and 10% padding (nonnegative plans keep a zero baseline).
  * Invalid input/allocation failure leaves the previous state intact. */
 lv_result_t ui_tracking_chart_set_target(lv_obj_t * obj,
                                          const ui_tracking_chart_sample_t * samples,
@@ -37,6 +37,10 @@ lv_result_t ui_tracking_chart_set_window_ms(lv_obj_t * obj, uint32_t window_ms);
 /* Left-edge fade in pixels, capped to the plot width when drawing.
  * Zero disables fading. Applies immediately. Default: 48 px. */
 void ui_tracking_chart_set_fade_width(lv_obj_t * obj, uint32_t width_px);
+
+/* Actual marker center in chart-local pixels, including the empty-state position.
+ * Resolve layout before querying after a size change. */
+void ui_tracking_chart_get_actual_point(lv_obj_t * obj, lv_point_t * point);
 
 /* Copies unit text; decimals must be 0..6. Default: empty unit, one decimal. */
 lv_result_t ui_tracking_chart_set_format(lv_obj_t * obj, const char * unit, uint8_t decimals);

@@ -13,6 +13,11 @@
 typedef struct {
     lv_obj_t * chart;
     lv_obj_t * stop;
+    lv_obj_t * icon;
+    lv_obj_t * background;
+    uint32_t paused_tick;
+    int32_t baseline_y;
+    bool paused;
     lv_timer_t * timer;
     uint32_t start_tick;
     uint32_t next_sample;
@@ -20,14 +25,34 @@ typedef struct {
 
 static float target_value(uint32_t time_ms)
 {
-    return 24.0f + 16.0f * sinf(6.28318530718f * time_ms / DEMO_SINE_PERIOD_MS);
+    float ramp = fminf(1.0f, time_ms / 6000.0f);
+    ramp = ramp * ramp * (3.0f - 2.0f * ramp);
+    return ramp * (24.0f + 16.0f * sinf(6.28318530718f * time_ms / DEMO_SINE_PERIOD_MS));
 }
 
 static float actual_value(uint32_t time_ms)
 {
     uint32_t time = time_ms > 2000 ? time_ms - 2000 : 0;
     float value = target_value(time);
-    return fmaxf(0, value * 0.94f + 0.8f * sinf(time_ms * 0.0005f));
+    return fmaxf(0, value * 0.94f + 0.8f * sinf(time_ms * 0.0005f) * fminf(1.0f, time / 6000.0f));
+}
+
+static void update_background(tracking_demo_t * demo)
+{
+    lv_point_t point;
+    ui_tracking_chart_get_actual_point(demo->chart, &point);
+    ui_radial_background_set_center(demo->background,
+                                   lv_obj_get_x(demo->chart) + point.x,
+                                   lv_obj_get_y(demo->chart) + point.y);
+    float rise = LV_CLAMP(0.0f, (demo->baseline_y - point.y) / 140.0f, 1.0f);
+    uint8_t mix = (uint8_t)(rise * rise * 255);
+    const ui_radial_background_stop_t colors[] = {
+        {lv_color_mix(lv_color_hex(0xAD4902), lv_color_hex(0x341008), mix), 20},
+        {lv_color_mix(lv_color_hex(0x510900), lv_color_hex(0x200C08), mix), 150},
+        {lv_color_hex(0x141414), 330},
+    };
+    if(ui_radial_background_set_stops(demo->background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK)
+        LV_LOG_ERROR("Cannot update demo background");
 }
 
 static void stop_sampling(tracking_demo_t * demo)
@@ -49,12 +74,25 @@ static void sample_timer(lv_timer_t * timer)
         }
         demo->next_sample += DEMO_SAMPLE_MS;
     }
+    update_background(demo);
     if(elapsed == DEMO_DURATION_MS) stop_sampling(demo);
 }
 
 static void stop_clicked(lv_event_t * e)
 {
-    stop_sampling(lv_event_get_user_data(e));
+    tracking_demo_t * demo = lv_event_get_user_data(e);
+    if(demo->paused) {
+        demo->start_tick += lv_tick_elaps(demo->paused_tick);
+        demo->paused = false;
+        lv_label_set_text(demo->icon, LV_SYMBOL_PAUSE);
+        lv_timer_resume(demo->timer);
+    }
+    else {
+        demo->paused_tick = lv_tick_get();
+        demo->paused = true;
+        lv_timer_pause(demo->timer);
+        lv_label_set_text(demo->icon, LV_SYMBOL_PLAY);
+    }
 }
 
 static void demo_deleted(lv_event_t * e)
@@ -82,13 +120,7 @@ void tracking_chart_demo(void)
     lv_obj_set_style_bg_opa(face, LV_OPA_COVER, 0);
     lv_obj_add_event_cb(face, demo_deleted, LV_EVENT_DELETE, demo);
 
-    const ui_radial_background_stop_t colors[] = {
-        {lv_color_hex(0xAD4902), 20},
-        {lv_color_hex(0x510900), 150},
-        {lv_color_hex(0x141414), 330},
-    };
-    lv_obj_t * background = ui_radial_background_create(face);
-    ui_radial_background_set_center(background, 300, 205);
+    demo->background = ui_radial_background_create(face);
     demo->chart = ui_tracking_chart_create(face);
     lv_obj_set_pos(demo->chart, 40, 165);
     ui_tracking_chart_set_fade_width(demo->chart, 48);
@@ -98,7 +130,6 @@ void tracking_chart_demo(void)
         target[i] = (ui_tracking_chart_sample_t){time, target_value(time)};
     }
     if(ui_tracking_chart_set_window_ms(demo->chart, 20000) != LV_RESULT_OK ||
-       ui_radial_background_set_stops(background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK ||
        ui_tracking_chart_set_target(demo->chart, target, LV_ARRAYLEN(target)) != LV_RESULT_OK ||
        ui_tracking_chart_set_format(demo->chart, "ml/s", 1) != LV_RESULT_OK) {
         LV_LOG_ERROR("Cannot configure tracking demo");
@@ -115,16 +146,18 @@ void tracking_chart_demo(void)
     demo->stop = ui_glass_button_create(face);
     lv_obj_set_size(demo->stop, 76, 76);
     lv_obj_align(demo->stop, LV_ALIGN_BOTTOM_MID, 0, -52);
-    lv_obj_t * icon = lv_obj_create(demo->stop);
-    lv_obj_remove_style_all(icon);
-    lv_obj_set_size(icon, 30, 30);
-    lv_obj_set_style_bg_color(icon, lv_color_hex(0xFFF7EE), 0);
-    lv_obj_set_style_bg_opa(icon, LV_OPA_COVER, 0);
-    lv_obj_set_clickable(icon, false);
-    lv_obj_set_scrollable(icon, false);
-    lv_obj_center(icon);
+    demo->icon = lv_label_create(demo->stop);
+    lv_label_set_text(demo->icon, LV_SYMBOL_PAUSE);
+    lv_obj_set_style_text_font(demo->icon, &lv_font_montserrat_24, 0);
+    lv_obj_set_clickable(demo->icon, false);
+    lv_obj_center(demo->icon);
     lv_obj_add_event_cb(demo->stop, stop_clicked, LV_EVENT_CLICKED, demo);
 
+    lv_obj_update_layout(face);
+    lv_point_t initial_point;
+    ui_tracking_chart_get_actual_point(demo->chart, &initial_point);
+    demo->baseline_y = initial_point.y;
+    update_background(demo);
     demo->start_tick = lv_tick_get();
     demo->next_sample = 0;
     demo->timer = lv_timer_create(sample_timer, DEMO_SAMPLE_MS, demo);
