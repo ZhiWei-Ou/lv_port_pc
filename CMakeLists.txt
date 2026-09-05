@@ -199,6 +199,12 @@ endif()
 
 if(BUILD_COMPONENT_TESTS AND NOT USE_FREERTOS)
     enable_testing()
+    add_executable(controls_test tests/controls_test.c)
+    target_link_libraries(controls_test PRIVATE components simulator_platform)
+    if(NOT MSVC)
+        target_compile_options(controls_test PRIVATE -Wall -Wextra -Werror)
+    endif()
+    add_test(NAME controls COMMAND controls_test)
     add_executable(tracking_chart_test
         tests/tracking_chart_test.c
         components/tracking_chart/demo/tracking_chart_demo.c)
