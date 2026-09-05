@@ -106,24 +106,24 @@ cmake --build build --target run
 
 ```text
 components/
-├── ui_card.c
-├── ui_card.h
-├── ui_button.c
-├── ui_button.h
-└── ui_components.h
+├── card.c
+├── card.h
+├── button.c
+├── button.h
+└── components.h
 ```
 
 组件 API 建议接收父对象并返回创建出的根对象：
 
 ```c
-lv_obj_t * ui_card_create(lv_obj_t * parent);
+lv_obj_t * card_create(lv_obj_t * parent);
 ```
 
 新增组件后，在 `add_executable(main ...)` 之后将源文件和头文件目录加入目标：
 
 ```cmake
 target_sources(main PRIVATE
-    components/ui_card.c
+    components/card.c
 )
 
 target_include_directories(main PRIVATE
@@ -134,7 +134,7 @@ target_include_directories(main PRIVATE
 然后在 `src/main.c` 的 UI 创建位置使用当前 screen：
 
 ```c
-ui_card_create(lv_screen_active());
+card_create(lv_screen_active());
 ```
 
 组件应尽量只负责自身结构、样式和内部事件。screen 级布局、页面切换和业务状态建议
@@ -142,23 +142,23 @@ ui_card_create(lv_screen_active());
 
 ### Glow Frame
 
-`components/glow/glow.h` 提供透明背景容器 `ui_glow`。它默认铺满父对象，
+`components/glow/glow.h` 提供透明背景容器 `glow`。它默认铺满父对象，
 内部光晕始终位于子对象下方，并被 Frame 边界裁剪：
 
 ```c
 #include "glow/glow.h"
 
-lv_obj_t * glow = ui_glow_create(parent);
-ui_glow_gradient_stop_t stops[] = {
+lv_obj_t * glow = glow_create(parent);
+glow_gradient_stop_t stops[] = {
     {lv_color_hex(0xC4B5FD), LV_OPA_80, 0},
     {lv_color_hex(0x818CF8), LV_OPA_50, 96},
     {lv_color_hex(0x3B82F6), LV_OPA_TRANSP, 255},
 };
-ui_glow_set_gradient(glow, stops, 3);
-ui_glow_set_center(glow, -40, 20);
-ui_glow_set_eccentricity(glow, 500);
-ui_glow_set_angle(glow, 25);
-ui_glow_animate_spread(glow, 850, 500, NULL);
+glow_set_gradient(glow, stops, 3);
+glow_set_center(glow, -40, 20);
+glow_set_eccentricity(glow, 500);
+glow_set_angle(glow, 25);
+glow_animate_spread(glow, 850, 500, NULL);
 ```
 
 中心偏移以 Frame 中心为原点，允许超出边界；`spread` 会被限制到 0–1000，

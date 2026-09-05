@@ -5,28 +5,28 @@
 
 typedef struct {
     lv_obj_t obj;
-    ui_radial_background_stop_t * stops;
+    radial_background_stop_t * stops;
     uint16_t count;
     int32_t center_x;
     int32_t center_y;
-} ui_radial_background_t;
+} radial_background_t;
 
 static void background_destructor(const lv_obj_class_t * class_p, lv_obj_t * obj);
 static void background_event(const lv_obj_class_t * class_p, lv_event_t * e);
 
-static const lv_obj_class_t ui_radial_background_class = {
+static const lv_obj_class_t radial_background_class = {
     .destructor_cb = background_destructor,
     .event_cb = background_event,
     .width_def = LV_PCT(100),
     .height_def = LV_PCT(100),
-    .instance_size = sizeof(ui_radial_background_t),
+    .instance_size = sizeof(radial_background_t),
     .base_class = &lv_obj_class,
-    .name = "ui_radial_background",
+    .name = "radial_background",
 };
 
-lv_obj_t * ui_radial_background_create(lv_obj_t * parent)
+lv_obj_t * radial_background_create(lv_obj_t * parent)
 {
-    lv_obj_t * obj = lv_obj_class_create_obj(&ui_radial_background_class, parent);
+    lv_obj_t * obj = lv_obj_class_create_obj(&radial_background_class, parent);
     lv_obj_class_init_obj(obj);
     lv_obj_remove_style_all(obj);
     lv_obj_set_size(obj, LV_PCT(100), LV_PCT(100));
@@ -36,16 +36,16 @@ lv_obj_t * ui_radial_background_create(lv_obj_t * parent)
     return obj;
 }
 
-void ui_radial_background_set_center(lv_obj_t * obj, int32_t x, int32_t y)
+void radial_background_set_center(lv_obj_t * obj, int32_t x, int32_t y)
 {
-    ui_radial_background_t * background = (ui_radial_background_t *)obj;
+    radial_background_t * background = (radial_background_t *)obj;
     background->center_x = x;
     background->center_y = y;
     lv_obj_invalidate(obj);
 }
 
-lv_result_t ui_radial_background_set_stops(lv_obj_t * obj,
-                                         const ui_radial_background_stop_t * stops,
+lv_result_t radial_background_set_stops(lv_obj_t * obj,
+                                         const radial_background_stop_t * stops,
                                          uint16_t count)
 {
     if(stops == NULL || count == 0) {
@@ -58,12 +58,12 @@ lv_result_t ui_radial_background_set_stops(lv_obj_t * obj,
     }
 
     size_t size = sizeof(*stops) * count;
-    ui_radial_background_stop_t * copy = lv_malloc(size);
+    radial_background_stop_t * copy = lv_malloc(size);
     if(copy == NULL) {
         return LV_RESULT_INVALID;
     }
     lv_memcpy(copy, stops, size);
-    ui_radial_background_t * background = (ui_radial_background_t *)obj;
+    radial_background_t * background = (radial_background_t *)obj;
     lv_free(background->stops);
     background->stops = copy;
     background->count = count;
@@ -74,7 +74,7 @@ lv_result_t ui_radial_background_set_stops(lv_obj_t * obj,
 static void background_destructor(const lv_obj_class_t * class_p, lv_obj_t * obj)
 {
     LV_UNUSED(class_p);
-    lv_free(((ui_radial_background_t *)obj)->stops);
+    lv_free(((radial_background_t *)obj)->stops);
 }
 
 static void background_event(const lv_obj_class_t * class_p, lv_event_t * e)
@@ -87,7 +87,7 @@ static void background_event(const lv_obj_class_t * class_p, lv_event_t * e)
     }
 
     lv_obj_t * obj = lv_event_get_current_target(e);
-    ui_radial_background_t * background = (ui_radial_background_t *)obj;
+    radial_background_t * background = (radial_background_t *)obj;
     if(background->count == 0) {
         return;
     }

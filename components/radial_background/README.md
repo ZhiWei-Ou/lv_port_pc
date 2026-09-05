@@ -4,9 +4,9 @@
 
 接口位于 `radial_background.h`，用法见 `demo/radial_background_demo.c`。
 
-- `ui_radial_background_create(parent)`：默认填满父容器，置于子对象底层，不接收点击。可用 LVGL 的位置和尺寸接口调整绘制区域。
-- `ui_radial_background_set_center(obj, x, y)`：圆心相对组件左上角，单位像素，默认 `(0, 0)`，允许位于组件之外。
-- `ui_radial_background_set_stops(obj, stops, count)`：设置颜色和各自的像素半径。半径必须非负且严格递增；第一半径以内保持第一种颜色，最后半径以外保持最后一种颜色，相邻半径之间线性渐变。
+- `radial_background_create(parent)`：默认填满父容器，置于子对象底层，不接收点击。可用 LVGL 的位置和尺寸接口调整绘制区域。
+- `radial_background_set_center(obj, x, y)`：圆心相对组件左上角，单位像素，默认 `(0, 0)`，允许位于组件之外。
+- `radial_background_set_stops(obj, stops, count)`：设置颜色和各自的像素半径。半径必须非负且严格递增；第一半径以内保持第一种颜色，最后半径以外保持最后一种颜色，相邻半径之间线性渐变。
 - 修改任意颜色或半径后重新设置 stops。数组由组件复制，调用后无需保留。支持单色；尚未设置颜色时透明。无效输入或分配失败返回 `LV_RESULT_INVALID` 并保留原配置。
 - 依赖已启用的 `LV_USE_DRAW_SW_COMPLEX_GRADIENTS`。每对相邻颜色使用一次渐变绘制，不受 `LV_GRADIENT_MAX_STOPS` 限制；重绘成本随颜色数量和绘制面积增加。
 

@@ -7,7 +7,7 @@
 #include "lvgl/src/core/lv_obj_private.h"
 
 typedef struct {
-    ui_tracking_chart_sample_t sample;
+    tracking_chart_sample_t sample;
     double slope;
 } chart_point_t;
 
@@ -49,7 +49,7 @@ static const lv_obj_class_t tracking_chart_class = {
     .height_def = 270,
     .instance_size = sizeof(tracking_chart_t),
     .base_class = &lv_obj_class,
-    .name = "ui_tracking_chart",
+    .name = "tracking_chart",
 };
 
 /* PCHIP slopes: harmonic interior tangents and limited endpoint tangents.
@@ -107,7 +107,7 @@ static double value_y(const tracking_chart_t * chart, const chart_geometry_t * g
     return g->bottom - (value - chart->y_min) / (chart->y_max - chart->y_min) * (g->bottom - g->top);
 }
 
-lv_obj_t * ui_tracking_chart_create(lv_obj_t * parent)
+lv_obj_t * tracking_chart_create(lv_obj_t * parent)
 {
     lv_obj_t * obj = lv_obj_class_create_obj(&tracking_chart_class, parent);
     lv_obj_class_init_obj(obj);
@@ -135,8 +135,8 @@ lv_obj_t * ui_tracking_chart_create(lv_obj_t * parent)
     return obj;
 }
 
-lv_result_t ui_tracking_chart_set_target(lv_obj_t * obj,
-                                         const ui_tracking_chart_sample_t * samples,
+lv_result_t tracking_chart_set_target(lv_obj_t * obj,
+                                         const tracking_chart_sample_t * samples,
                                          uint16_t count)
 {
     if(samples == NULL || count < 2 || samples[0].time_ms != 0) return LV_RESULT_INVALID;
@@ -161,11 +161,11 @@ lv_result_t ui_tracking_chart_set_target(lv_obj_t * obj,
     double padding = (high - low) * 0.1;
     chart->y_min = low == 0 ? 0 : low - padding;
     chart->y_max = high == low ? 1 : high + padding;
-    ui_tracking_chart_reset(obj);
+    tracking_chart_reset(obj);
     return LV_RESULT_OK;
 }
 
-lv_result_t ui_tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, float value)
+lv_result_t tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, float value)
 {
     tracking_chart_t * chart = (tracking_chart_t *)obj;
     uint32_t count = chart->actual_count;
@@ -182,7 +182,7 @@ lv_result_t ui_tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, fl
         chart->actual = actual;
         chart->actual_capacity = capacity;
     }
-    chart->actual[count].sample = (ui_tracking_chart_sample_t){time_ms, value};
+    chart->actual[count].sample = (tracking_chart_sample_t){time_ms, value};
     chart->actual_count = ++count;
     chart->actual[count - 1].slope = point_slope(chart->actual, count, count - 1);
     if(count >= 2) chart->actual[count - 2].slope = point_slope(chart->actual, count, count - 2);
@@ -200,7 +200,7 @@ lv_result_t ui_tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, fl
     return LV_RESULT_OK;
 }
 
-lv_result_t ui_tracking_chart_set_window_ms(lv_obj_t * obj, uint32_t window_ms)
+lv_result_t tracking_chart_set_window_ms(lv_obj_t * obj, uint32_t window_ms)
 {
     if(window_ms == 0) return LV_RESULT_INVALID;
     tracking_chart_t * chart = (tracking_chart_t *)obj;
@@ -209,14 +209,14 @@ lv_result_t ui_tracking_chart_set_window_ms(lv_obj_t * obj, uint32_t window_ms)
     return LV_RESULT_OK;
 }
 
-void ui_tracking_chart_set_fade_width(lv_obj_t * obj, uint32_t width_px)
+void tracking_chart_set_fade_width(lv_obj_t * obj, uint32_t width_px)
 {
     tracking_chart_t * chart = (tracking_chart_t *)obj;
     chart->fade_width = width_px;
     lv_obj_invalidate(obj);
 }
 
-lv_result_t ui_tracking_chart_set_format(lv_obj_t * obj, const char * unit, uint8_t decimals)
+lv_result_t tracking_chart_set_format(lv_obj_t * obj, const char * unit, uint8_t decimals)
 {
     if(unit == NULL || decimals > 6) return LV_RESULT_INVALID;
     tracking_chart_t * chart = (tracking_chart_t *)obj;
@@ -226,7 +226,7 @@ lv_result_t ui_tracking_chart_set_format(lv_obj_t * obj, const char * unit, uint
     return LV_RESULT_OK;
 }
 
-void ui_tracking_chart_reset(lv_obj_t * obj)
+void tracking_chart_reset(lv_obj_t * obj)
 {
     tracking_chart_t * chart = (tracking_chart_t *)obj;
     lv_free(chart->actual);
@@ -237,7 +237,7 @@ void ui_tracking_chart_reset(lv_obj_t * obj)
     lv_obj_invalidate(obj);
 }
 
-void ui_tracking_chart_get_actual_point(lv_obj_t * obj, lv_point_t * point)
+void tracking_chart_get_actual_point(lv_obj_t * obj, lv_point_t * point)
 {
     tracking_chart_t * chart = (tracking_chart_t *)obj;
     chart_geometry_t g = geometry(obj);
@@ -256,7 +256,7 @@ static void refresh_labels(tracking_chart_t * chart)
     double value = 0;
     uint32_t time = 0;
     if(chart->actual_count) {
-        ui_tracking_chart_sample_t latest = chart->actual[chart->actual_count - 1].sample;
+        tracking_chart_sample_t latest = chart->actual[chart->actual_count - 1].sample;
         value = latest.value;
         time = latest.time_ms;
         char text[64];

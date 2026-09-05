@@ -14,51 +14,51 @@ typedef struct {
     uint16_t eccentricity;
     uint16_t angle;
     uint16_t spread;
-} ui_glow_t;
+} glow_t;
 
 static void glow_constructor(const lv_obj_class_t * class_p, lv_obj_t * obj);
 static void glow_event(const lv_obj_class_t * class_p, lv_event_t * e);
-static void glow_refresh(ui_glow_t * glow);
-static void glow_set_spread(ui_glow_t * glow, uint16_t spread, bool cancel_animation);
+static void glow_refresh(glow_t * glow);
+static void glow_apply_spread(glow_t * glow, uint16_t spread, bool cancel_animation);
 static void glow_spread_anim_cb(void * var, int32_t value);
 
-static const lv_obj_class_t ui_glow_class = {
+static const lv_obj_class_t glow_class = {
     .constructor_cb = glow_constructor,
     .event_cb = glow_event,
     .width_def = LV_PCT(100),
     .height_def = LV_PCT(100),
-    .instance_size = sizeof(ui_glow_t),
+    .instance_size = sizeof(glow_t),
     .base_class = &lv_obj_class,
-    .name = "ui_glow",
+    .name = "glow",
 };
 
-lv_obj_t * ui_glow_create(lv_obj_t * parent)
+lv_obj_t * glow_create(lv_obj_t * parent)
 {
-    lv_obj_t * obj = lv_obj_class_create_obj(&ui_glow_class, parent);
+    lv_obj_t * obj = lv_obj_class_create_obj(&glow_class, parent);
     lv_obj_class_init_obj(obj);
     lv_obj_set_style_bg_opa(obj, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(obj, 0, LV_PART_MAIN);
     return obj;
 }
 
-void ui_glow_set_center(lv_obj_t * obj, int32_t offset_x, int32_t offset_y)
+void glow_set_center(lv_obj_t * obj, int32_t offset_x, int32_t offset_y)
 {
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     glow->center_x = offset_x;
     glow->center_y = offset_y;
     glow_refresh(glow);
 }
 
-void ui_glow_set_color(lv_obj_t * obj, lv_color_t color)
+void glow_set_color(lv_obj_t * obj, lv_color_t color)
 {
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     for(uint8_t i = 0; i < glow->gradient.stops_count; i++) {
         glow->gradient.stops[i].color = color;
     }
     glow_refresh(glow);
 }
 
-lv_result_t ui_glow_set_gradient(lv_obj_t * obj, const ui_glow_gradient_stop_t * stops, uint8_t stop_count)
+lv_result_t glow_set_gradient(lv_obj_t * obj, const glow_gradient_stop_t * stops, uint8_t stop_count)
 {
     if(stops == NULL || stop_count < 2 || stop_count > LV_GRADIENT_MAX_STOPS) {
         return LV_RESULT_INVALID;
@@ -70,7 +70,7 @@ lv_result_t ui_glow_set_gradient(lv_obj_t * obj, const ui_glow_gradient_stop_t *
         }
     }
 
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     for(uint8_t i = 0; i < stop_count; i++) {
         glow->gradient.stops[i].color = stops[i].color;
         glow->gradient.stops[i].opa = stops[i].opacity;
@@ -81,33 +81,33 @@ lv_result_t ui_glow_set_gradient(lv_obj_t * obj, const ui_glow_gradient_stop_t *
     return LV_RESULT_OK;
 }
 
-void ui_glow_set_eccentricity(lv_obj_t * obj, uint16_t eccentricity)
+void glow_set_eccentricity(lv_obj_t * obj, uint16_t eccentricity)
 {
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     glow->eccentricity = LV_MIN(eccentricity, 999);
     glow_refresh(glow);
 }
 
-void ui_glow_set_angle(lv_obj_t * obj, int16_t degrees)
+void glow_set_angle(lv_obj_t * obj, int16_t degrees)
 {
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     glow->angle = (uint16_t)((degrees % 360 + 360) % 360);
     glow_refresh(glow);
 }
 
-void ui_glow_set_spread(lv_obj_t * obj, uint16_t spread)
+void glow_set_spread(lv_obj_t * obj, uint16_t spread)
 {
-    glow_set_spread((ui_glow_t *)obj, spread, true);
+    glow_apply_spread((glow_t *)obj, spread, true);
 }
 
-void ui_glow_animate_spread(lv_obj_t * obj, uint16_t target_spread, uint32_t duration_ms, lv_anim_path_cb_t easing)
+void glow_animate_spread(lv_obj_t * obj, uint16_t target_spread, uint32_t duration_ms, lv_anim_path_cb_t easing)
 {
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
     target_spread = LV_MIN(target_spread, 1000);
     lv_anim_delete(obj, glow_spread_anim_cb);
 
     if(duration_ms == 0) {
-        glow_set_spread(glow, target_spread, false);
+        glow_apply_spread(glow, target_spread, false);
         return;
     }
 
@@ -124,7 +124,7 @@ void ui_glow_animate_spread(lv_obj_t * obj, uint16_t target_spread, uint32_t dur
 static void glow_constructor(const lv_obj_class_t * class_p, lv_obj_t * obj)
 {
     LV_UNUSED(class_p);
-    ui_glow_t * glow = (ui_glow_t *)obj;
+    glow_t * glow = (glow_t *)obj;
 
     lv_obj_set_size(obj, LV_PCT(100), LV_PCT(100));
     lv_obj_set_scrollable(obj, false);
@@ -159,11 +159,11 @@ static void glow_event(const lv_obj_class_t * class_p, lv_event_t * e)
     }
 
     if(lv_event_get_code(e) == LV_EVENT_SIZE_CHANGED) {
-        glow_refresh((ui_glow_t *)lv_event_get_current_target(e));
+        glow_refresh((glow_t *)lv_event_get_current_target(e));
     }
 }
 
-static void glow_refresh(ui_glow_t * glow)
+static void glow_refresh(glow_t * glow)
 {
     int32_t width = lv_obj_get_width(&glow->obj);
     int32_t height = lv_obj_get_height(&glow->obj);
@@ -202,7 +202,7 @@ static void glow_refresh(ui_glow_t * glow)
     lv_obj_invalidate(glow->layer);
 }
 
-static void glow_set_spread(ui_glow_t * glow, uint16_t spread, bool cancel_animation)
+static void glow_apply_spread(glow_t * glow, uint16_t spread, bool cancel_animation)
 {
     if(cancel_animation) {
         lv_anim_delete(&glow->obj, glow_spread_anim_cb);
@@ -213,5 +213,5 @@ static void glow_set_spread(ui_glow_t * glow, uint16_t spread, bool cancel_anima
 
 static void glow_spread_anim_cb(void * var, int32_t value)
 {
-    glow_set_spread((ui_glow_t *)var, (uint16_t)LV_CLAMP(0, value, 1000), false);
+    glow_apply_spread((glow_t *)var, (uint16_t)LV_CLAMP(0, value, 1000), false);
 }

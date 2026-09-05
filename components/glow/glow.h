@@ -11,24 +11,24 @@ typedef struct {
     lv_color_t color;
     lv_opa_t opacity;
     uint8_t position;
-} ui_glow_gradient_stop_t;
+} glow_gradient_stop_t;
 
-lv_obj_t * ui_glow_create(lv_obj_t * parent);
+lv_obj_t * glow_create(lv_obj_t * parent);
 
-void ui_glow_set_center(lv_obj_t * obj, int32_t offset_x, int32_t offset_y);
-void ui_glow_set_color(lv_obj_t * obj, lv_color_t color);
+void glow_set_center(lv_obj_t * obj, int32_t offset_x, int32_t offset_y);
+void glow_set_color(lv_obj_t * obj, lv_color_t color);
 
-lv_result_t ui_glow_set_gradient(
+lv_result_t glow_set_gradient(
     lv_obj_t * obj,
-    const ui_glow_gradient_stop_t * stops,
+    const glow_gradient_stop_t * stops,
     uint8_t stop_count
 );
 
-void ui_glow_set_eccentricity(lv_obj_t * obj, uint16_t eccentricity);
-void ui_glow_set_angle(lv_obj_t * obj, int16_t degrees);
-void ui_glow_set_spread(lv_obj_t * obj, uint16_t spread);
+void glow_set_eccentricity(lv_obj_t * obj, uint16_t eccentricity);
+void glow_set_angle(lv_obj_t * obj, int16_t degrees);
+void glow_set_spread(lv_obj_t * obj, uint16_t spread);
 
-void ui_glow_animate_spread(
+void glow_animate_spread(
     lv_obj_t * obj,
     uint16_t target_spread,
     uint32_t duration_ms,

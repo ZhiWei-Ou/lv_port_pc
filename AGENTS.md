@@ -27,7 +27,7 @@ For debugging, configure with `-DCMAKE_BUILD_TYPE=Debug`; add `-DASAN=ON` for Ad
 
 ## Coding Style & Naming Conventions
 
-Use C99 or C++17 as configured by CMake. Match nearby code: four-space indentation, snake_case identifiers, uppercase macros, and function opening braces on separate lines. Public component APIs use `ui_<component>_<action>`, such as `ui_glow_create(parent)`; keep internal helpers `static`.
+Use C99 or C++17 as configured by CMake. Match nearby code: four-space indentation, snake_case identifiers, uppercase macros, and function opening braces on separate lines. Public component APIs use `<component>_<action>`, such as `glow_create(parent)`; keep internal helpers `static`.
 
 Pair component `.c` and `.h` files, use header guards, and register sources in `CMakeLists.txt`. Keep component behavior local and screen layout in application/demo code. No repository-level formatter or linter configuration is provided.
 

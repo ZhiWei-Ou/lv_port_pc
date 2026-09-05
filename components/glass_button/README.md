@@ -5,7 +5,7 @@
 ```c
 #include "glass_button/glass_button.h"
 
-lv_obj_t * button = ui_glass_button_create(parent);
+lv_obj_t * button = glass_button_create(parent);
 lv_obj_set_size(button, 72, 72);
 lv_obj_center(button);
 

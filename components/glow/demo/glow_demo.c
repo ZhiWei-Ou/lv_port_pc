@@ -23,7 +23,7 @@ typedef struct {
 
 static void glow_breath_anim_cb(void * var, int32_t value)
 {
-    ui_glow_set_spread((lv_obj_t *)var, (uint16_t)value);
+    glow_set_spread((lv_obj_t *)var, (uint16_t)value);
 }
 
 static void glow_move_y_anim_cb(void * var, int32_t value)
@@ -33,19 +33,19 @@ static void glow_move_y_anim_cb(void * var, int32_t value)
 
 static void create_glow_example(lv_obj_t * parent, const glow_example_t * example, int32_t x, int32_t y)
 {
-    const ui_glow_gradient_stop_t amber_stops[] = {
+    const glow_gradient_stop_t amber_stops[] = {
         {lv_color_hex(0xFFE0C2), LV_OPA_90, 0},
         {lv_color_hex(0xD45900), LV_OPA_70, 70},
         {lv_color_hex(0x9A3900), LV_OPA_30, 160},
         {lv_color_hex(0x4A1900), LV_OPA_TRANSP, 255},
     };
-    const ui_glow_gradient_stop_t ember_stops[] = {
+    const glow_gradient_stop_t ember_stops[] = {
         {lv_color_hex(0xFFD0A3), LV_OPA_80, 0},
         {lv_color_hex(0xD45900), LV_OPA_70, 80},
         {lv_color_hex(0x8B2A00), LV_OPA_30, 170},
         {lv_color_hex(0x431400), LV_OPA_TRANSP, 255},
     };
-    const ui_glow_gradient_stop_t * stops = example->gradient_variant ? ember_stops : amber_stops;
+    const glow_gradient_stop_t * stops = example->gradient_variant ? ember_stops : amber_stops;
 
     lv_obj_t * card = lv_obj_create(parent);
     lv_obj_remove_style_all(card);
@@ -73,22 +73,22 @@ static void create_glow_example(lv_obj_t * parent, const glow_example_t * exampl
         lv_obj_set_overflow_visible(glow_parent, false);
     }
 
-    lv_obj_t * glow = ui_glow_create(glow_parent);
+    lv_obj_t * glow = glow_create(glow_parent);
     if(example->fill_from_below || example->fills_card) {
         lv_obj_set_size(glow, GLOW_CARD_SIZE * 3, GLOW_CARD_SIZE * 3);
         lv_obj_set_pos(glow, -GLOW_CARD_SIZE, -GLOW_CARD_SIZE);
     }
-    ui_glow_set_gradient(glow, stops, 4);
+    glow_set_gradient(glow, stops, 4);
     if(example->fill_from_below) {
-        ui_glow_set_center(glow, 0, GLOW_CARD_SIZE / 2 + 56);
+        glow_set_center(glow, 0, GLOW_CARD_SIZE / 2 + 56);
     }
     else {
-        ui_glow_set_center(glow, example->center_x, example->center_y);
+        glow_set_center(glow, example->center_x, example->center_y);
     }
-    ui_glow_set_eccentricity(glow, example->eccentricity);
-    ui_glow_set_angle(glow, example->angle);
+    glow_set_eccentricity(glow, example->eccentricity);
+    glow_set_angle(glow, example->angle);
     if(example->fill_from_below) {
-        ui_glow_set_spread(glow, 0);
+        glow_set_spread(glow, 0);
         lv_anim_t fill;
         lv_anim_init(&fill);
         lv_anim_set_var(&fill, glow);
@@ -101,7 +101,7 @@ static void create_glow_example(lv_obj_t * parent, const glow_example_t * exampl
         lv_anim_start(&fill);
     }
     else {
-        ui_glow_set_spread(glow, example->spread);
+        glow_set_spread(glow, example->spread);
     }
 
     if(example->moves_in_frame) {

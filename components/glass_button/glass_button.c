@@ -11,13 +11,13 @@
 
 static void glass_button_event(const lv_obj_class_t * class_p, lv_event_t * e);
 
-static const lv_obj_class_t ui_glass_button_class = {
+static const lv_obj_class_t glass_button_class = {
     .event_cb = glass_button_event,
     .width_def = 64,
     .height_def = 64,
     .instance_size = sizeof(lv_button_t),
     .base_class = &lv_button_class,
-    .name = "ui_glass_button",
+    .name = "glass_button",
 };
 
 static const lv_style_prop_t press_properties[] = {
@@ -38,9 +38,9 @@ static const lv_style_transition_dsc_t release_transition = {
     .time = 180,
 };
 
-lv_obj_t * ui_glass_button_create(lv_obj_t * parent)
+lv_obj_t * glass_button_create(lv_obj_t * parent)
 {
-    lv_obj_t * obj = lv_obj_class_create_obj(&ui_glass_button_class, parent);
+    lv_obj_t * obj = lv_obj_class_create_obj(&glass_button_class, parent);
     lv_obj_class_init_obj(obj);
     lv_obj_remove_style_all(obj);
     lv_obj_set_size(obj, 64, 64);

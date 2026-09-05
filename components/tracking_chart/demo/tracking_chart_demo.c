@@ -40,18 +40,18 @@ static float actual_value(uint32_t time_ms)
 static void update_background(tracking_demo_t * demo)
 {
     lv_point_t point;
-    ui_tracking_chart_get_actual_point(demo->chart, &point);
-    ui_radial_background_set_center(demo->background,
+    tracking_chart_get_actual_point(demo->chart, &point);
+    radial_background_set_center(demo->background,
                                    lv_obj_get_x(demo->chart) + point.x,
                                    lv_obj_get_y(demo->chart) + point.y);
     float rise = LV_CLAMP(0.0f, (demo->baseline_y - point.y) / 140.0f, 1.0f);
     uint8_t mix = (uint8_t)(rise * rise * 255);
-    const ui_radial_background_stop_t colors[] = {
+    const radial_background_stop_t colors[] = {
         {lv_color_mix(lv_color_hex(0xAD4902), lv_color_hex(0x341008), mix), 20},
         {lv_color_mix(lv_color_hex(0x510900), lv_color_hex(0x200C08), mix), 150},
         {lv_color_hex(0x141414), 330},
     };
-    if(ui_radial_background_set_stops(demo->background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK)
+    if(radial_background_set_stops(demo->background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK)
         LV_LOG_ERROR("Cannot update demo background");
 }
 
@@ -66,7 +66,7 @@ static void sample_timer(lv_timer_t * timer)
     tracking_demo_t * demo = lv_timer_get_user_data(timer);
     uint32_t elapsed = LV_MIN(lv_tick_elaps(demo->start_tick), DEMO_DURATION_MS);
     while(demo->next_sample <= elapsed) {
-        if(ui_tracking_chart_append_actual(demo->chart, demo->next_sample,
+        if(tracking_chart_append_actual(demo->chart, demo->next_sample,
                                             actual_value(demo->next_sample)) != LV_RESULT_OK) {
             LV_LOG_ERROR("Cannot append tracking demo sample");
             stop_sampling(demo);
@@ -120,18 +120,18 @@ void tracking_chart_demo(void)
     lv_obj_set_style_bg_opa(face, LV_OPA_COVER, 0);
     lv_obj_add_event_cb(face, demo_deleted, LV_EVENT_DELETE, demo);
 
-    demo->background = ui_radial_background_create(face);
-    demo->chart = ui_tracking_chart_create(face);
+    demo->background = radial_background_create(face);
+    demo->chart = tracking_chart_create(face);
     lv_obj_set_pos(demo->chart, 40, 165);
-    ui_tracking_chart_set_fade_width(demo->chart, 48);
-    ui_tracking_chart_sample_t target[DEMO_DURATION_MS / DEMO_TARGET_SAMPLE_MS + 1];
+    tracking_chart_set_fade_width(demo->chart, 48);
+    tracking_chart_sample_t target[DEMO_DURATION_MS / DEMO_TARGET_SAMPLE_MS + 1];
     for(uint32_t i = 0; i < LV_ARRAYLEN(target); i++) {
         uint32_t time = i * DEMO_TARGET_SAMPLE_MS;
-        target[i] = (ui_tracking_chart_sample_t){time, target_value(time)};
+        target[i] = (tracking_chart_sample_t){time, target_value(time)};
     }
-    if(ui_tracking_chart_set_window_ms(demo->chart, 20000) != LV_RESULT_OK ||
-       ui_tracking_chart_set_target(demo->chart, target, LV_ARRAYLEN(target)) != LV_RESULT_OK ||
-       ui_tracking_chart_set_format(demo->chart, "ml/s", 1) != LV_RESULT_OK) {
+    if(tracking_chart_set_window_ms(demo->chart, 20000) != LV_RESULT_OK ||
+       tracking_chart_set_target(demo->chart, target, LV_ARRAYLEN(target)) != LV_RESULT_OK ||
+       tracking_chart_set_format(demo->chart, "ml/s", 1) != LV_RESULT_OK) {
         LV_LOG_ERROR("Cannot configure tracking demo");
         lv_obj_delete(face);
         return;
@@ -143,7 +143,7 @@ void tracking_chart_demo(void)
     lv_obj_set_style_text_font(title, &lv_font_montserrat_36, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 80);
 
-    demo->stop = ui_glass_button_create(face);
+    demo->stop = glass_button_create(face);
     lv_obj_set_size(demo->stop, 76, 76);
     lv_obj_align(demo->stop, LV_ALIGN_BOTTOM_MID, 0, -52);
     demo->icon = lv_label_create(demo->stop);
@@ -155,7 +155,7 @@ void tracking_chart_demo(void)
 
     lv_obj_update_layout(face);
     lv_point_t initial_point;
-    ui_tracking_chart_get_actual_point(demo->chart, &initial_point);
+    tracking_chart_get_actual_point(demo->chart, &initial_point);
     demo->baseline_y = initial_point.y;
     update_background(demo);
     demo->start_tick = lv_tick_get();

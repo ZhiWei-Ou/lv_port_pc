@@ -56,7 +56,7 @@ void glass_button_demo(void)
     lv_obj_t * screen = lv_screen_active();
     lv_obj_update_layout(screen);
 
-    lv_obj_t * button = ui_glass_button_create(screen);
+    lv_obj_t * button = glass_button_create(screen);
     lv_obj_set_size(button, 320, 72);
     lv_obj_set_pos(button, (lv_obj_get_width(screen) - 320) / 2,
                    (lv_obj_get_height(screen) - 72) / 2);

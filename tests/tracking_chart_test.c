@@ -101,14 +101,14 @@ static void snapshot(const char * name)
 
 static void test_chart(void)
 {
-    lv_obj_t * chart = ui_tracking_chart_create(lv_screen_active());
+    lv_obj_t * chart = tracking_chart_create(lv_screen_active());
     lv_obj_set_pos(chart, 90, 160);
-    CHECK(ui_tracking_chart_append_actual(chart, 0, 0) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_set_format(chart, "ml/s", 1) == LV_RESULT_OK);
-    CHECK(ui_tracking_chart_set_format(chart, NULL, 1) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_set_format(chart, "bad", 7) == LV_RESULT_INVALID);
-    ui_tracking_chart_sample_t target[] = {{0, 0}, {12000, 40}, {120000, 20}};
-    CHECK(ui_tracking_chart_set_target(chart, target, 3) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 0, 0) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_set_format(chart, "ml/s", 1) == LV_RESULT_OK);
+    CHECK(tracking_chart_set_format(chart, NULL, 1) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_set_format(chart, "bad", 7) == LV_RESULT_INVALID);
+    tracking_chart_sample_t target[] = {{0, 0}, {12000, 40}, {120000, 20}};
+    CHECK(tracking_chart_set_target(chart, target, 3) == LV_RESULT_OK);
     CHECK(find_label(chart, "--") && find_label(chart, "ml/s"));
     target[1].value = 999; /* The chart owns a copy. */
 
@@ -119,13 +119,13 @@ static void test_chart(void)
     CHECK(observation.actual_paths == 0 && observation.target_paths == 0);
     CHECK(find_label(chart, "--") && find_label(chart, "0"));
     snapshot("chart_empty");
-    CHECK(ui_tracking_chart_append_actual(chart, 0, 2) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 0, 2) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(observation.actual_paths == 0 && observation.target_paths == 0);
     CHECK(find_label(chart, "002.0"));
-    CHECK(ui_tracking_chart_append_actual(chart, 250, 4) == LV_RESULT_OK);
-    CHECK(ui_tracking_chart_append_actual(chart, 1250, 15) == LV_RESULT_OK);
-    CHECK(ui_tracking_chart_append_actual(chart, 12000, 35) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 250, 4) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 1250, 15) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 12000, 35) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(observation.actual_paths == 1 && observation.target_paths == 1);
     /* At 12 seconds, only 12/20 of the fixed-width history is filled. */
@@ -136,44 +136,44 @@ static void test_chart(void)
     snapshot("chart_12");
 
     /* Runtime display settings change the existing trace without resetting it. */
-    CHECK(ui_tracking_chart_set_window_ms(chart, 40000) == LV_RESULT_OK);
-    CHECK(ui_tracking_chart_set_window_ms(chart, 0) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_set_window_ms(chart, 40000) == LV_RESULT_OK);
+    CHECK(tracking_chart_set_window_ms(chart, 0) == LV_RESULT_INVALID);
     render(chart, &observation);
     CHECK(fabsf(observation.min_x - 274.4f) < 0.01f);
     CHECK(find_label(chart, "035.0") && find_label(chart, "12"));
-    ui_tracking_chart_set_fade_width(chart, 252);
+    tracking_chart_set_fade_width(chart, 252);
     render(chart, &observation);
     CHECK(observation.min_opa < LV_OPA_COVER);
-    ui_tracking_chart_set_fade_width(chart, 0);
+    tracking_chart_set_fade_width(chart, 0);
     render(chart, &observation);
     CHECK(observation.min_opa == LV_OPA_COVER);
-    CHECK(ui_tracking_chart_set_window_ms(chart, 20000) == LV_RESULT_OK);
-    ui_tracking_chart_set_fade_width(chart, 48);
+    CHECK(tracking_chart_set_window_ms(chart, 20000) == LV_RESULT_OK);
+    tracking_chart_set_fade_width(chart, 48);
 
-    CHECK(ui_tracking_chart_append_actual(chart, 12000, 1) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_append_actual(chart, 1000, 1) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_append_actual(chart, 120001, 1) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_append_actual(chart, 13000, NAN) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_append_actual(chart, 13000, INFINITY) == LV_RESULT_INVALID);
-    CHECK(ui_tracking_chart_set_target(chart, NULL, 3) == LV_RESULT_INVALID);
-    ui_tracking_chart_sample_t invalid[] = {{0, 0}, {0, 1}};
-    CHECK(ui_tracking_chart_set_target(chart, invalid, 2) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_append_actual(chart, 12000, 1) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_append_actual(chart, 1000, 1) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_append_actual(chart, 120001, 1) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_append_actual(chart, 13000, NAN) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_append_actual(chart, 13000, INFINITY) == LV_RESULT_INVALID);
+    CHECK(tracking_chart_set_target(chart, NULL, 3) == LV_RESULT_INVALID);
+    tracking_chart_sample_t invalid[] = {{0, 0}, {0, 1}};
+    CHECK(tracking_chart_set_target(chart, invalid, 2) == LV_RESULT_INVALID);
     CHECK(find_label(chart, "035.0"));
 
-    CHECK(ui_tracking_chart_append_actual(chart, 60000, -100) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 60000, -100) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(find_label(chart, "-100.0") && find_label(chart, "60"));
     snapshot("chart_below_range");
-    CHECK(ui_tracking_chart_append_actual(chart, 120000, 100) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 120000, 100) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(find_label(chart, "100.0") && find_label(chart, "120"));
     snapshot("chart_above_range");
 
-    ui_tracking_chart_reset(chart);
+    tracking_chart_reset(chart);
     CHECK(find_label(chart, "--") && find_label(chart, "ml/s"));
-    const ui_tracking_chart_sample_t shape[] = {{0, 0}, {1000, 40}, {1200, 40}, {90000, 5}, {120000, 20}};
+    const tracking_chart_sample_t shape[] = {{0, 0}, {1000, 40}, {1200, 40}, {90000, 5}, {120000, 20}};
     for(size_t i = 0; i < LV_ARRAYLEN(shape); i++) {
-        CHECK(ui_tracking_chart_append_actual(chart, shape[i].time_ms, shape[i].value) == LV_RESULT_OK);
+        CHECK(tracking_chart_append_actual(chart, shape[i].time_ms, shape[i].value) == LV_RESULT_OK);
     }
     render(chart, &observation);
     /* Only 100..120 seconds remain: the old peak of 40 is off screen,
@@ -183,10 +183,10 @@ static void test_chart(void)
     CHECK(observation.max_y <= 354 + 0.01f);
     snapshot("chart_120");
 
-    const ui_tracking_chart_sample_t zero[] = {{0, 0}, {120000, 0}};
-    CHECK(ui_tracking_chart_set_target(chart, zero, 2) == LV_RESULT_OK);
+    const tracking_chart_sample_t zero[] = {{0, 0}, {120000, 0}};
+    CHECK(tracking_chart_set_target(chart, zero, 2) == LV_RESULT_OK);
     CHECK(find_label(chart, "--"));
-    CHECK(ui_tracking_chart_append_actual(chart, 1000, 0) == LV_RESULT_OK);
+    CHECK(tracking_chart_append_actual(chart, 1000, 0) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(find_label(chart, "000.0"));
     lv_obj_delete(chart);

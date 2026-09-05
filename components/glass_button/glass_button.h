@@ -12,7 +12,7 @@ extern "C" {
  * with the button. Decorative children should not be clickable.
  * The translucent surface simulates glass; it does not blur the backdrop.
  */
-lv_obj_t * ui_glass_button_create(lv_obj_t * parent);
+lv_obj_t * glass_button_create(lv_obj_t * parent);
 
 #ifdef __cplusplus
 }
