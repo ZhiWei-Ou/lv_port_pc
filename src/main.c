@@ -10,7 +10,7 @@
 
 #include "lvgl/lvgl.h"
 #include "hal/hal.h"
-#include "radial_background/demo/radial_background_demo.h"
+#include "tracking_chart/demo/tracking_chart_demo.h"
 
 #define WINDOW_WIDTH  700
 #define WINDOW_HEIGHT 700
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     lv_init();
     sdl_hal_init(WINDOW_WIDTH, WINDOW_HEIGHT);
-    radial_background_demo();
+    tracking_chart_demo();
 
     while(1) {
         uint32_t sleep_time_ms = lv_timer_handler();

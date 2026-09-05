@@ -79,6 +79,10 @@ set(MAIN_SOURCES
     components/glow/demo/glow_demo.c
     components/radial_background/radial_background.c
     components/radial_background/demo/radial_background_demo.c
+    components/glass_button/glass_button.c
+    components/glass_button/demo/glass_button_demo.c
+    components/tracking_chart/tracking_chart.c
+    components/tracking_chart/demo/tracking_chart_demo.c
 )
 set(MAIN_LIBS lvgl ${SDL2_LIBRARIES})
 
@@ -155,6 +159,30 @@ add_executable(main ${MAIN_SOURCES})
 target_compile_definitions(main PRIVATE LV_CONF_INCLUDE_SIMPLE)
 target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/components)
 target_link_libraries(main ${MAIN_LIBS})
+
+option(BUILD_COMPONENT_TESTS "Build desktop component integration tests" OFF)
+if(BUILD_COMPONENT_TESTS AND NOT USE_FREERTOS)
+    enable_testing()
+    add_executable(tracking_chart_test
+        tests/tracking_chart_test.c
+        src/hal/hal.c
+        src/mouse_cursor_icon.c
+        components/tracking_chart/tracking_chart.c
+        components/tracking_chart/demo/tracking_chart_demo.c
+        components/radial_background/radial_background.c
+        components/glass_button/glass_button.c
+    )
+    target_compile_definitions(tracking_chart_test PRIVATE LV_CONF_INCLUDE_SIMPLE)
+    target_include_directories(tracking_chart_test PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/components)
+    target_link_libraries(tracking_chart_test ${MAIN_LIBS})
+    if(NOT MSVC)
+        target_compile_options(tracking_chart_test PRIVATE -Wall -Wextra -Werror)
+    endif()
+    add_test(NAME tracking_chart COMMAND tracking_chart_test)
+    add_test(NAME tracking_chart_sdl_stop COMMAND tracking_chart_test --sdl)
+    set_tests_properties(tracking_chart_sdl_stop PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_RENDER_DRIVER=software")
+endif()
 
 # On Windows, GUI applications do not show a console by default,
 # which hides log output. This ensures a console is available for logging.
