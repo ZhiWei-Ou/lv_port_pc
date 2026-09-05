@@ -91,15 +91,16 @@ void tracking_chart_demo(void)
     ui_radial_background_set_center(background, 300, 205);
     demo->chart = ui_tracking_chart_create(face);
     lv_obj_set_pos(demo->chart, 40, 165);
+    ui_tracking_chart_set_fade_width(demo->chart, 48);
     ui_tracking_chart_sample_t target[DEMO_DURATION_MS / DEMO_TARGET_SAMPLE_MS + 1];
     for(uint32_t i = 0; i < LV_ARRAYLEN(target); i++) {
         uint32_t time = i * DEMO_TARGET_SAMPLE_MS;
         target[i] = (ui_tracking_chart_sample_t){time, target_value(time)};
     }
-    if(ui_radial_background_set_stops(background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK ||
+    if(ui_tracking_chart_set_window_ms(demo->chart, 20000) != LV_RESULT_OK ||
+       ui_radial_background_set_stops(background, colors, LV_ARRAYLEN(colors)) != LV_RESULT_OK ||
        ui_tracking_chart_set_target(demo->chart, target, LV_ARRAYLEN(target)) != LV_RESULT_OK ||
-       ui_tracking_chart_set_format(demo->chart, "ml/s", 1) != LV_RESULT_OK ||
-       ui_tracking_chart_append_actual(demo->chart, 0, actual_value(0)) != LV_RESULT_OK) {
+       ui_tracking_chart_set_format(demo->chart, "ml/s", 1) != LV_RESULT_OK) {
         LV_LOG_ERROR("Cannot configure tracking demo");
         lv_obj_delete(face);
         return;
@@ -125,7 +126,7 @@ void tracking_chart_demo(void)
     lv_obj_add_event_cb(demo->stop, stop_clicked, LV_EVENT_CLICKED, demo);
 
     demo->start_tick = lv_tick_get();
-    demo->next_sample = DEMO_SAMPLE_MS;
+    demo->next_sample = 0;
     demo->timer = lv_timer_create(sample_timer, DEMO_SAMPLE_MS, demo);
     if(demo->timer == NULL) {
         LV_LOG_ERROR("Cannot create tracking demo timer");

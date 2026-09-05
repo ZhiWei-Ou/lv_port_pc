@@ -20,6 +20,7 @@ typedef struct {
     float last_x;
     float last_y;
     float min_x;
+    lv_opa_t min_opa;
     float min_y;
     float max_y;
 } path_observation_t;
@@ -65,6 +66,7 @@ static void observe_curve(lv_event_t * e)
         CHECK(point.x >= 97.99f && point.x <= 350.01f);
         CHECK(point.y >= 175.99f && point.y <= 350.01f);
         if(actual) {
+            observation->min_opa = LV_MIN(observation->min_opa, line->opa);
             observation->min_x = fminf(observation->min_x, point.x);
             observation->last_x = point.x;
             observation->last_y = point.y;
@@ -76,7 +78,8 @@ static void observe_curve(lv_event_t * e)
 
 static void render(lv_obj_t * chart, path_observation_t * observation)
 {
-    *observation = (path_observation_t){.min_x = INFINITY, .min_y = INFINITY, .max_y = -INFINITY};
+    *observation = (path_observation_t){.min_x = INFINITY, .min_y = INFINITY,
+                                      .max_y = -INFINITY, .min_opa = LV_OPA_COVER};
     lv_obj_invalidate(chart);
     lv_refr_now(NULL);
 }
@@ -112,6 +115,10 @@ static void test_chart(void)
     path_observation_t observation;
     lv_obj_set_send_draw_task_events(chart, true);
     lv_obj_add_event_cb(chart, observe_curve, LV_EVENT_DRAW_TASK_ADDED, &observation);
+    render(chart, &observation);
+    CHECK(observation.actual_paths == 0 && observation.target_paths == 0);
+    CHECK(find_label(chart, "--") && find_label(chart, "0"));
+    snapshot("chart_empty");
     CHECK(ui_tracking_chart_append_actual(chart, 0, 2) == LV_RESULT_OK);
     render(chart, &observation);
     CHECK(observation.actual_paths == 0 && observation.target_paths == 0);
@@ -127,6 +134,21 @@ static void test_chart(void)
     CHECK(fabsf(observation.last_y - (350 - 39.0f / 48 * 174)) < 0.01f);
     CHECK(find_label(chart, "035.0") && find_label(chart, "12"));
     snapshot("chart_12");
+
+    /* Runtime display settings change the existing trace without resetting it. */
+    CHECK(ui_tracking_chart_set_window_ms(chart, 40000) == LV_RESULT_OK);
+    CHECK(ui_tracking_chart_set_window_ms(chart, 0) == LV_RESULT_INVALID);
+    render(chart, &observation);
+    CHECK(fabsf(observation.min_x - 274.4f) < 0.01f);
+    CHECK(find_label(chart, "035.0") && find_label(chart, "12"));
+    ui_tracking_chart_set_fade_width(chart, 252);
+    render(chart, &observation);
+    CHECK(observation.min_opa < LV_OPA_COVER);
+    ui_tracking_chart_set_fade_width(chart, 0);
+    render(chart, &observation);
+    CHECK(observation.min_opa == LV_OPA_COVER);
+    CHECK(ui_tracking_chart_set_window_ms(chart, 20000) == LV_RESULT_OK);
+    ui_tracking_chart_set_fade_width(chart, 48);
 
     CHECK(ui_tracking_chart_append_actual(chart, 12000, 1) == LV_RESULT_INVALID);
     CHECK(ui_tracking_chart_append_actual(chart, 1000, 1) == LV_RESULT_INVALID);

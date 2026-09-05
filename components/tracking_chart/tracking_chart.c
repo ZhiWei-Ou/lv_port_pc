@@ -6,8 +6,6 @@
 #include "lvgl/src/core/lv_obj_class_private.h"
 #include "lvgl/src/core/lv_obj_private.h"
 
-#define CHART_WINDOW_MS 20000
-
 typedef struct {
     ui_tracking_chart_sample_t sample;
     double slope;
@@ -20,6 +18,8 @@ typedef struct {
     uint32_t target_count;
     uint32_t actual_count;
     uint32_t actual_capacity;
+    uint32_t window_ms;
+    uint32_t fade_width;
     double y_min;
     double y_max;
     uint8_t decimals;
@@ -118,6 +118,8 @@ lv_obj_t * ui_tracking_chart_create(lv_obj_t * parent)
     lv_obj_set_style_text_color(obj, lv_color_hex(0xFFF7EE), 0);
     tracking_chart_t * chart = (tracking_chart_t *)obj;
     chart->y_max = 1;
+    chart->window_ms = 20000;
+    chart->fade_width = 48;
     chart->decimals = 1;
     chart->value_label = lv_label_create(obj);
     chart->unit_label = lv_label_create(obj);
@@ -186,7 +188,7 @@ lv_result_t ui_tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, fl
     if(count >= 2) chart->actual[count - 2].slope = point_slope(chart->actual, count, count - 2);
     if(count == 3) chart->actual[0].slope = point_slope(chart->actual, count, 0);
     /* Keep two points before the window for interpolation and tangent updates. */
-    uint32_t start = time_ms > CHART_WINDOW_MS ? time_ms - CHART_WINDOW_MS : 0;
+    uint32_t start = time_ms > chart->window_ms ? time_ms - chart->window_ms : 0;
     uint32_t discard = 0;
     while(discard + 2 < count && chart->actual[discard + 2].sample.time_ms < start) discard++;
     if(discard) {
@@ -196,6 +198,22 @@ lv_result_t ui_tracking_chart_append_actual(lv_obj_t * obj, uint32_t time_ms, fl
     refresh_labels(chart);
     lv_obj_invalidate(obj);
     return LV_RESULT_OK;
+}
+
+lv_result_t ui_tracking_chart_set_window_ms(lv_obj_t * obj, uint32_t window_ms)
+{
+    if(window_ms == 0) return LV_RESULT_INVALID;
+    tracking_chart_t * chart = (tracking_chart_t *)obj;
+    chart->window_ms = window_ms;
+    lv_obj_invalidate(obj);
+    return LV_RESULT_OK;
+}
+
+void ui_tracking_chart_set_fade_width(lv_obj_t * obj, uint32_t width_px)
+{
+    tracking_chart_t * chart = (tracking_chart_t *)obj;
+    chart->fade_width = width_px;
+    lv_obj_invalidate(obj);
 }
 
 lv_result_t ui_tracking_chart_set_format(lv_obj_t * obj, const char * unit, uint8_t decimals)
@@ -235,7 +253,9 @@ static void refresh_labels(tracking_chart_t * chart)
     }
     else lv_label_set_text(chart->value_label, "--");
     lv_label_set_text_fmt(chart->time_label, "%u", (unsigned)(time / 1000));
-    int32_t y = (int32_t)value_y(chart, &g, LV_CLAMP(chart->y_min, value, chart->y_max));
+    int32_t y = chart->actual_count
+                ? (int32_t)value_y(chart, &g, LV_CLAMP(chart->y_min, value, chart->y_max))
+                : g.axis - 12;
     lv_obj_set_pos(chart->value_label, g.center + 18, LV_CLAMP(0, y - 26, LV_MAX(0, g.bottom - 48)));
     lv_obj_set_pos(chart->time_label, g.center + 18, g.axis + 16);
     lv_obj_align_to(chart->unit_label, chart->value_label, LV_ALIGN_OUT_RIGHT_TOP, 5, 8);
@@ -283,8 +303,8 @@ static void draw_curve(tracking_chart_t * chart, lv_layer_t * layer, const chart
     lv_point_precise_t * path = lv_malloc(capacity * sizeof(*path));
     if(path == NULL) { LV_LOG_ERROR("Cannot allocate chart draw path"); return; }
     uint32_t used = 0;
-    double scale = (double)(g->center - g->left) / CHART_WINDOW_MS;
-    double window_start = (double)now - CHART_WINDOW_MS;
+    double scale = (double)(g->center - g->left) / chart->window_ms;
+    double window_start = (double)now - chart->window_ms;
     for(uint32_t i = 0; i + 1 < count && points[i].sample.time_ms < now; i++) {
         if(points[i + 1].sample.time_ms <= window_start) continue;
         double start = fmax(points[i].sample.time_ms, window_start);
@@ -314,9 +334,9 @@ static void draw_curve(tracking_chart_t * chart, lv_layer_t * layer, const chart
     line.round_end = 1;
     /* Fade the outgoing history without covering the transparent background.
      * Each clipped segment contains two points and a path separator. */
-    double fade_width = fmin(48.0, (g->center - g->left) / 3.0);
+    double fade_width = fmin(chart->fade_width, g->center - g->left);
     uint32_t fading = 0;
-    while(fading < used && path[fading].x < g->left + fade_width) {
+    while(fade_width > 0 && fading < used && path[fading].x < g->left + fade_width) {
         double x = (path[fading].x + path[fading + 1].x) * 0.5;
         double alpha = LV_CLAMP(0.0, (x - g->left) / fade_width, 1.0);
         alpha = alpha * alpha * (3.0 - 2.0 * alpha);
@@ -379,10 +399,26 @@ static void chart_event(const lv_obj_class_t * class_p, lv_event_t * e)
                   g.axis + (major ? 14 : 7), white, opa);
     }
     draw_line(layer, g.center, g.axis, g.center, g.axis + 14, white, 170);
+    if(chart->actual_count == 0) {
+        /* Five empty pixel rows between the outer dot and the tick tops.
+         * The orange center leaves a visible white ring in the empty state. */
+        int32_t y = g.axis - 12;
+        lv_draw_rect_dsc_t dot;
+        lv_draw_rect_dsc_init(&dot);
+        dot.bg_color = white;
+        dot.bg_opa = LV_OPA_COVER;
+        dot.radius = LV_RADIUS_CIRCLE;
+        lv_area_t area = {g.center - 7, y - 7, g.center + 6, y + 6};
+        lv_draw_rect(layer, &dot, &area);
+        dot.bg_color = lv_color_hex(0xF58A16);
+        area = (lv_area_t){g.center - 5, y - 5, g.center + 4, y + 4};
+        lv_draw_rect(layer, &dot, &area);
+        return;
+    }
     draw_curve(chart, layer, &g, chart->target, chart->target_count, now, lv_color_hex(0xF58A16), 2);
     /* Keep the marker on the target curve at the current time. Draw it below
      * the actual trace so overlapping markers leave the measured value clear. */
-    for(uint32_t i = 0; now && i + 1 < chart->target_count; i++) {
+    for(uint32_t i = 0; i + 1 < chart->target_count; i++) {
         const chart_point_t * a = &chart->target[i];
         const chart_point_t * b = &chart->target[i + 1];
         if(now < a->sample.time_ms || now > b->sample.time_ms) continue;
