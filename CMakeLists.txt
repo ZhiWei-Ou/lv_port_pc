@@ -37,9 +37,6 @@ else()
     set(FREERTOS_SOURCES "")  # No FreeRTOS sources if FreeRTOS is disabled
 endif()
 
-# Main include files of the project
-include_directories(${PROJECT_SOURCE_DIR}/main/inc)
-
 # Define options for LVGL with default values (OFF)
 option(LV_USE_DRAW_SDL "Use SDL draw unit" OFF)
 option(LV_USE_LIBPNG "Use libpng to decode PNG" OFF)
@@ -72,74 +69,52 @@ set(CONFIG_LV_USE_THORVG_INTERNAL OFF CACHE BOOL "Build bundled ThorVG" FORCE)
 add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${SDL2_INCLUDE_DIRS})
 
-set(MAIN_SOURCES
-    src/mouse_cursor_icon.c
-    src/hal/hal.c
-    components/glow/glow.c
-    components/glow/demo/glow_demo.c
-    components/radial_background/radial_background.c
-    components/radial_background/demo/radial_background_demo.c
-    components/glass_button/glass_button.c
-    components/glass_button/demo/glass_button_demo.c
-    components/tracking_chart/tracking_chart.c
-    components/tracking_chart/demo/tracking_chart_demo.c
-)
-set(MAIN_LIBS lvgl ${SDL2_LIBRARIES})
-
-# Create the main executable, depending on the FreeRTOS option
+set(PLATFORM_LIBS lvgl ${SDL2_LIBRARIES})
 if(USE_FREERTOS)
-    list(APPEND MAIN_SOURCES src/freertos_main.c src/freertos/freertos_posix_port.c ${FREERTOS_SOURCES})
-    list(APPEND MAIN_LIBS freertos_config freertos_kernel)
-else()
-    list(APPEND MAIN_SOURCES src/main.c)
+    list(APPEND PLATFORM_LIBS freertos_config freertos_kernel)
 endif()
-
-
 if(NOT MSVC)
-    list(APPEND MAIN_LIBS m pthread)
+    list(APPEND PLATFORM_LIBS m pthread)
 endif()
-
-# Custom target to run the executable
-add_custom_target(run COMMAND ${EXECUTABLE_OUTPUT_PATH}/main DEPENDS main)
 
 # Conditionally include and link SDL2_image if LV_USE_DRAW_SDL is enabled
 if(LV_USE_DRAW_SDL)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
     find_package(SDL2_image REQUIRED)
     target_include_directories(lvgl PUBLIC ${SDL2_IMAGE_INCLUDE_DIRS})
-    list(APPEND MAIN_LIBS ${SDL2_IMAGE_LIBRARIES})
+    list(APPEND PLATFORM_LIBS ${SDL2_IMAGE_LIBRARIES})
 endif()
 
 # Conditionally include and link libpng if LV_USE_LIBPNG is enabled
 if(LV_USE_LIBPNG)
     find_package(PNG REQUIRED)
     target_include_directories(lvgl PUBLIC ${PNG_INCLUDE_DIRS})
-    list(APPEND MAIN_LIBS ${PNG_LIBRARIES})
+    list(APPEND PLATFORM_LIBS ${PNG_LIBRARIES})
 endif()
 
 # Conditionally include and link libjpeg-turbo if LV_USE_LIBJPEG_TURBO is enabled
 if(LV_USE_LIBJPEG_TURBO)
     find_package(JPEG REQUIRED)
     target_include_directories(lvgl PUBLIC ${JPEG_INCLUDE_DIRS})
-    list(APPEND MAIN_LIBS ${JPEG_LIBRARIES})
+    list(APPEND PLATFORM_LIBS ${JPEG_LIBRARIES})
 endif()
 
 # Conditionally include and link FFmpeg libraries if LV_USE_FFMPEG is enabled
 if(LV_USE_FFMPEG)
-    list(APPEND MAIN_LIBS avformat avcodec avutil swscale z)
+    list(APPEND PLATFORM_LIBS avformat avcodec avutil swscale z)
 endif()
 
 # Conditionally include and link FreeType if LV_USE_FREETYPE is enabled
 if(LV_USE_FREETYPE)
     find_package(Freetype REQUIRED)
     target_include_directories(lvgl PUBLIC ${FREETYPE_INCLUDE_DIRS})
-    list(APPEND MAIN_LIBS ${FREETYPE_LIBRARIES})
+    list(APPEND PLATFORM_LIBS ${FREETYPE_LIBRARIES})
 endif()
 
 if(LVGL_PRO_PROJECT_DIR)
   if(EXISTS "${LVGL_PRO_PROJECT_DIR}/CMakeLists.txt")
     add_subdirectory(${LVGL_PRO_PROJECT_DIR} ui)
-    list(APPEND MAIN_LIBS lib-ui)
+    list(APPEND PLATFORM_LIBS lib-ui)
 
     target_compile_definitions(lib-ui PUBLIC LV_LVGL_H_INCLUDE_SIMPLE)
     target_include_directories(lib-ui PUBLIC
@@ -155,26 +130,74 @@ if(LVGL_PRO_PROJECT_DIR)
   endif()
 endif()
 
-add_executable(main ${MAIN_SOURCES})
-target_compile_definitions(main PRIVATE LV_CONF_INCLUDE_SIMPLE)
-target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/components)
-target_link_libraries(main ${MAIN_LIBS})
+# Component implementation files belong to the library; demos are separate apps.
+file(GLOB_RECURSE COMPONENT_SOURCES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/components/*.c"
+    "${PROJECT_SOURCE_DIR}/components/*.cpp"
+    "${PROJECT_SOURCE_DIR}/components/*.h"
+    "${PROJECT_SOURCE_DIR}/components/*.hpp")
+list(FILTER COMPONENT_SOURCES EXCLUDE REGEX "/demo/")
+add_library(components STATIC ${COMPONENT_SOURCES})
+target_compile_definitions(components PUBLIC LV_CONF_INCLUDE_SIMPLE)
+target_include_directories(components PUBLIC ${PROJECT_SOURCE_DIR}/components)
+target_link_libraries(components PUBLIC lvgl)
+if(NOT MSVC)
+    target_link_libraries(components PUBLIC m)
+endif()
 
+option(BUILD_COMPONENT_DEMOS "Build each component demo executable" ON)
 option(BUILD_COMPONENT_TESTS "Build desktop component integration tests" OFF)
+if(BUILD_COMPONENT_DEMOS OR BUILD_COMPONENT_TESTS)
+    add_library(simulator_platform STATIC src/hal/hal.c src/mouse_cursor_icon.c)
+    target_include_directories(simulator_platform PUBLIC ${PROJECT_SOURCE_DIR}/src)
+    target_compile_definitions(simulator_platform PUBLIC LV_CONF_INCLUDE_SIMPLE)
+    target_link_libraries(simulator_platform PUBLIC ${PLATFORM_LIBS})
+    if(USE_FREERTOS)
+        target_sources(simulator_platform PRIVATE src/freertos/freertos_posix_port.c ${FREERTOS_SOURCES})
+    endif()
+endif()
+
+if(BUILD_COMPONENT_DEMOS)
+    if(USE_FREERTOS)
+        set(DEMO_MAIN src/freertos_main.c)
+    else()
+        set(DEMO_MAIN src/main.c)
+    endif()
+    file(GLOB COMPONENT_DIRS CONFIGURE_DEPENDS LIST_DIRECTORIES true "${PROJECT_SOURCE_DIR}/components/*")
+    foreach(COMPONENT_DIR IN LISTS COMPONENT_DIRS)
+        if(NOT IS_DIRECTORY "${COMPONENT_DIR}/demo")
+            continue()
+        endif()
+        get_filename_component(COMPONENT_NAME "${COMPONENT_DIR}" NAME)
+        set(DEMO_NAME "${COMPONENT_NAME}_demo")
+        file(GLOB_RECURSE DEMO_SOURCES CONFIGURE_DEPENDS
+            "${COMPONENT_DIR}/demo/*.c" "${COMPONENT_DIR}/demo/*.cpp"
+            "${COMPONENT_DIR}/demo/*.h" "${COMPONENT_DIR}/demo/*.hpp")
+        add_executable(${DEMO_NAME} ${DEMO_MAIN} ${DEMO_SOURCES})
+        target_compile_definitions(${DEMO_NAME} PRIVATE
+            DEMO_HEADER="${COMPONENT_NAME}/demo/${DEMO_NAME}.h"
+            DEMO_ENTRY=${DEMO_NAME})
+        target_link_libraries(${DEMO_NAME} PRIVATE components simulator_platform)
+        add_custom_target(run_${DEMO_NAME}
+            COMMAND $<TARGET_FILE:${DEMO_NAME}> DEPENDS ${DEMO_NAME}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} USES_TERMINAL)
+        if(WIN32)
+            if(MSVC)
+                target_link_options(${DEMO_NAME} PRIVATE "/SUBSYSTEM:CONSOLE")
+            else()
+                target_link_options(${DEMO_NAME} PRIVATE "-mconsole")
+            endif()
+        endif()
+    endforeach()
+endif()
+
 if(BUILD_COMPONENT_TESTS AND NOT USE_FREERTOS)
     enable_testing()
     add_executable(tracking_chart_test
         tests/tracking_chart_test.c
-        src/hal/hal.c
-        src/mouse_cursor_icon.c
-        components/tracking_chart/tracking_chart.c
-        components/tracking_chart/demo/tracking_chart_demo.c
-        components/radial_background/radial_background.c
-        components/glass_button/glass_button.c
-    )
-    target_compile_definitions(tracking_chart_test PRIVATE LV_CONF_INCLUDE_SIMPLE)
-    target_include_directories(tracking_chart_test PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/components)
-    target_link_libraries(tracking_chart_test ${MAIN_LIBS})
+        components/tracking_chart/demo/tracking_chart_demo.c)
+    target_include_directories(tracking_chart_test PRIVATE ${PROJECT_SOURCE_DIR})
+    target_link_libraries(tracking_chart_test PRIVATE components simulator_platform)
     if(NOT MSVC)
         target_compile_options(tracking_chart_test PRIVATE -Wall -Wextra -Werror)
     endif()
@@ -182,16 +205,6 @@ if(BUILD_COMPONENT_TESTS AND NOT USE_FREERTOS)
     add_test(NAME tracking_chart_sdl_stop COMMAND tracking_chart_test --sdl)
     set_tests_properties(tracking_chart_sdl_stop PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_RENDER_DRIVER=software")
-endif()
-
-# On Windows, GUI applications do not show a console by default,
-# which hides log output. This ensures a console is available for logging.
-if (WIN32)
-    if (MSVC)
-        target_link_options(main PRIVATE "/SUBSYSTEM:CONSOLE")
-    else()
-        target_link_options(main PRIVATE "-mconsole")
-    endif()
 endif()
 
 # Apply additional compile options if the build type is Debug

@@ -8,7 +8,7 @@
 
 ## 当前配置
 
-- 720 × 720 SDL2 模拟窗口
+- 700 × 700 SDL2 模拟窗口
 - 32-bit 色深
 - 16 ms 默认刷新周期（60 FPS 档）
 - SDL2 硬件加速、全帧渲染和双缓冲
@@ -83,62 +83,73 @@ git submodule update --init --recursive
 
 ## 构建与运行
 
-在项目根目录执行：
+默认构建组件静态库和所有独立 demo：
 
 ```bash
 cmake -B build -S .
 cmake --build build -j
-./bin/main
+./bin/tracking_chart_demo
 ```
 
-也可以使用项目提供的 CMake `run` target：
+可执行文件为 `bin/glow_demo`、`bin/radial_background_demo`、
+`bin/glass_button_demo`、`bin/tracking_chart_demo`，窗口统一为 700 × 700。
+可单独构建或运行一个 demo：
 
 ```bash
-cmake --build build --target run
+cmake --build build --target glow_demo -j
+cmake --build build --target run_glow_demo
 ```
 
-程序启动后显示一个 720 × 720 的空白 screen。右下角显示 FPS 与 CPU 信息，
-左下角显示内存使用和碎片率。
+仅构建组件库（不包含 demo、main 或 HAL）：
+
+```bash
+cmake -B build-library -S . -DBUILD_COMPONENT_DEMOS=OFF -DBUILD_COMPONENT_TESTS=OFF
+cmake --build build-library --target components -j
+```
+
+库产物为构建目录中的 `libcomponents.a`（Windows 工具链名称可能不同）。
+库依赖 LVGL，当前桌面配置仍需要 SDL2 开发包。
+
+启用已有集成测试：
+
+```bash
+cmake -B build -S . -DBUILD_COMPONENT_TESTS=ON
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+```
 
 ## 开发个性化组件
 
-自定义组件统一放在 `components/` 下。建议一个组件使用一组 `.c` 和 `.h` 文件：
+按组件名建立目录，CMake 自动发现 `.c`、`.cpp`、`.h` 和 `.hpp` 文件；
+`demo/` 以外的文件归入 `components` 静态库，`demo/` 内文件归入独立可执行文件。
 
 ```text
 components/
-├── card.c
-├── card.h
-├── button.c
-├── button.h
-└── components.h
+└── card/
+    ├── card.c
+    ├── card.h
+    └── demo/
+        ├── card_demo.c
+        └── card_demo.h
 ```
 
-组件 API 建议接收父对象并返回创建出的根对象：
+组件提供 `card_create(parent)` 等 API。demo 头文件声明入口，源文件实现它：
 
 ```c
-lv_obj_t * card_create(lv_obj_t * parent);
+void card_demo(void)
+{
+    card_create(lv_screen_active());
+}
 ```
 
-新增组件后，在 `add_executable(main ...)` 之后将源文件和头文件目录加入目标：
+入口固定为 `<组件名>_demo()`，头文件为 `<组件名>/demo/<组件名>_demo.h`。
+新增组件无需逐个修改 CMake 源文件列表，构建后生成 `bin/card_demo`。
+C++ 实现的入口应在头文件中使用 `extern "C"`，供公共 C 入口调用。
 
-```cmake
-target_sources(main PRIVATE
-    components/card.c
-)
-
-target_include_directories(main PRIVATE
-    ${PROJECT_SOURCE_DIR}/components
-)
-```
-
-然后在 `src/main.c` 的 UI 创建位置使用当前 screen：
-
-```c
-card_create(lv_screen_active());
-```
-
-组件应尽量只负责自身结构、样式和内部事件。screen 级布局、页面切换和业务状态建议
-由上层 UI 代码管理，使组件能够在不同页面中复用。
+所有 demo 共用 `src/main.c` 的平台初始化与事件循环；FreeRTOS 模式共用
+`src/freertos_main.c`。CMake 通过 `DEMO_HEADER` 和 `DEMO_ENTRY` 选择本次
+可执行文件的 demo；HAL 和鼠标资源集中在 `simulator_platform` 库。
+组件只负责自身行为，demo 负责页面组合，不调用其他组件的 demo。
 
 ### Glow Frame
 
@@ -171,7 +182,7 @@ glow_animate_spread(glow, 850, 500, NULL);
 
 | 配置 | 文件 | 当前值 |
 | --- | --- | --- |
-| 模拟窗口尺寸 | `src/main.c` | 720 × 720 |
+| 模拟窗口尺寸 | `src/main.c` | 700 × 700 |
 | 色深 | `lv_conf.h` / `LV_COLOR_DEPTH` | 32 |
 | 刷新周期 | `lv_conf.h` / `LV_DEF_REFR_PERIOD` | 16 ms |
 | SDL 缓冲数量 | `lv_conf.h` / `LV_SDL_BUF_COUNT` | 2 |

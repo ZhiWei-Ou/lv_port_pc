@@ -14,6 +14,7 @@
 #if LV_USE_OS == LV_OS_FREERTOS
 
 #include "hal/hal.h"
+#include DEMO_HEADER
 #include <stdio.h>
 
 // ........................................................................................................
@@ -90,7 +91,8 @@ void lvgl_task(void *pvParameters)
     lv_init();
 
     /*Initialize the HAL (display, input devices, tick) for LVGL*/
-    sdl_hal_init(720, 720);
+    sdl_hal_init(700, 700);
+    DEMO_ENTRY();
 
     while (true){
         lv_timer_handler(); /* Handle LVGL tasks */
