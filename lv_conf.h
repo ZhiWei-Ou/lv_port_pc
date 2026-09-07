@@ -2034,7 +2034,11 @@
 /** The port provides `lv_os_get_proc_idle_percent` a per-process idle percentage
  *  in addition to the system-wide one. LVGL provides a default one for linux systems.
  */
+#if defined(__APPLE__)
+#define LV_SYSMON_PROC_IDLE_AVAILABLE 0
+#else
 #define LV_SYSMON_PROC_IDLE_AVAILABLE 1
+#endif
 
 /** Show the CPU usage and FPS count in a label on the screen. */
 #define LV_USE_PERF_MONITOR 1
